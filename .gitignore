@@ -1,0 +1,9 @@
+node_modules
+dist
+dev-dist
+.claude
+.env
+.env.local
+
+# API keys — never commit
+src/app/config/claude.ts
