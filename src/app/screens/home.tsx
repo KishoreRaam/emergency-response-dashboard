@@ -3,20 +3,22 @@ import { MapContainer, TileLayer, Marker, Popup, ZoomControl, useMap } from 'rea
 import { Icon } from 'leaflet';
 import 'leaflet/dist/leaflet.css';
 import { Shield, Phone, Ambulance, X, TruckIcon, Loader2 } from 'lucide-react';
-import { emergencyServices, type ServiceType } from '../data/emergency-services';
-import { ServiceCard } from '../components/service-card';
+import { emergencyServices, type EmergencyService, type ServiceType } from '../data/emergency-services';
 import { OfflineIndicator } from '../components/offline-indicator';
 import { BottomNav } from '../components/bottom-nav';
 import { haversineDistance, etaMinutes } from '../utils/distance';
 import { useNavigate, useSearchParams } from 'react-router';
 import { SosButton } from '../components/sos-button';
+import { fetchNearbyServices, getCachedServices } from '../services/overpass';
 
-// Chennai city centre fallback
-const FALLBACK_LOCATION = { lat: 13.0827, lng: 80.2707 };
+// ─── Constants ────────────────────────────────────────────────────────────────
+
+const FALLBACK_LOCATION = { lat: 13.0827, lng: 80.2707 }; // Chennai city centre
 const GPS_TIMEOUT_MS = 5000;
 const MAX_RADIUS_KM = 15;
 
-// ---------- Map fly-to helper (must be child of MapContainer) ----------
+// ─── Map helpers ──────────────────────────────────────────────────────────────
+
 function MapCenterer({ lat, lng }: { lat: number; lng: number }) {
   const map = useMap();
   const didFly = useRef(false);
@@ -29,7 +31,6 @@ function MapCenterer({ lat, lng }: { lat: number; lng: number }) {
   return null;
 }
 
-// ---------- Custom map markers ----------
 const createCustomIcon = (type: ServiceType) => {
   const colorMap: Record<ServiceType, string> = {
     hospital: '#D62828',
@@ -62,18 +63,27 @@ const userIcon = new Icon({
   iconAnchor: [12, 12],
 });
 
+// ─── Component ────────────────────────────────────────────────────────────────
+
 type QuickServiceType = 'ambulance' | 'police' | 'towing';
 
 export function HomeScreen() {
-  const [selectedQuickService, setSelectedQuickService] = useState<QuickServiceType | null>(null);
-  const [isOnline, setIsOnline] = useState(navigator.onLine);
-  const [userLocation, setUserLocation] = useState<{ lat: number; lng: number } | null>(null);
-  const [gpsLoading, setGpsLoading] = useState(true);
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
   const filterParam = searchParams.get('filter');
 
-  // Apply filter from query param (e.g. /?filter=hospital from injury-detail)
+  const [selectedQuickService, setSelectedQuickService] = useState<QuickServiceType | null>(null);
+  const [isOnline, setIsOnline] = useState(navigator.onLine);
+  const [userLocation, setUserLocation] = useState<{ lat: number; lng: number } | null>(null);
+  const [gpsLoading, setGpsLoading] = useState(true);
+
+  // Live data state
+  const [liveServices, setLiveServices] = useState<EmergencyService[] | null>(null);
+  const [overpassLoading, setOverpassLoading] = useState(false);
+  const [limitedData, setLimitedData] = useState(false);
+  const [usingCache, setUsingCache] = useState(false);
+
+  // ── Apply ?filter= query param from injury-detail ──────────────────────────
   useEffect(() => {
     if (!filterParam) return;
     const paramMap: Record<string, QuickServiceType> = {
@@ -86,19 +96,16 @@ export function HomeScreen() {
     if (mapped) setSelectedQuickService(mapped);
   }, [filterParam]);
 
-  // ---------- Online/offline listeners ----------
+  // ── Online / offline listeners ─────────────────────────────────────────────
   useEffect(() => {
-    const handleOnline = () => setIsOnline(true);
-    const handleOffline = () => setIsOnline(false);
-    window.addEventListener('online', handleOnline);
-    window.addEventListener('offline', handleOffline);
-    return () => {
-      window.removeEventListener('online', handleOnline);
-      window.removeEventListener('offline', handleOffline);
-    };
+    const on = () => setIsOnline(true);
+    const off = () => setIsOnline(false);
+    window.addEventListener('online', on);
+    window.addEventListener('offline', off);
+    return () => { window.removeEventListener('online', on); window.removeEventListener('offline', off); };
   }, []);
 
-  // ---------- GPS with 5s timeout fallback ----------
+  // ── GPS with 5-second timeout fallback ────────────────────────────────────
   useEffect(() => {
     if (!navigator.geolocation) {
       setUserLocation(FALLBACK_LOCATION);
@@ -112,7 +119,7 @@ export function HomeScreen() {
     }, GPS_TIMEOUT_MS);
 
     navigator.geolocation.getCurrentPosition(
-      (pos) => {
+      pos => {
         clearTimeout(timer);
         setUserLocation({ lat: pos.coords.latitude, lng: pos.coords.longitude });
         setGpsLoading(false);
@@ -128,54 +135,95 @@ export function HomeScreen() {
     return () => clearTimeout(timer);
   }, []);
 
-  // ---------- Enrich services with dynamic distance ----------
-  const enrichedServices = userLocation
-    ? emergencyServices
-        .map((svc) => ({
-          ...svc,
-          distance: haversineDistance(
-            userLocation.lat,
-            userLocation.lng,
-            svc.location.lat,
-            svc.location.lng
-          ),
-        }))
-        .filter((svc) => svc.distance <= MAX_RADIUS_KM)
-        .sort((a, b) => a.distance - b.distance)
-    : [];
+  // ── Fetch live data once GPS resolves ─────────────────────────────────────
+  useEffect(() => {
+    if (!userLocation) return;
+    const { lat, lng } = userLocation;
 
-  // ---------- Quick-select filtering (top 3 nearest) ----------
-  const getFilteredServices = () => {
+    // 1. Check cache first (instant — no network)
+    const cached = getCachedServices(lat, lng, !isOnline);
+    if (cached) {
+      setLiveServices(cached);
+      setUsingCache(true);
+      return; // Skip Overpass — cache is fresh enough
+    }
+
+    // 2. If offline and no cache, fall through to static data
+    if (!isOnline) return;
+
+    // 3. Fetch from Overpass
+    setOverpassLoading(true);
+    fetchNearbyServices(lat, lng)
+      .then(({ services, limited }) => {
+        setLiveServices(services);
+        setLimitedData(limited);
+        setUsingCache(false);
+      })
+      .catch(() => {
+        // Overpass failed — silently fall back to static data
+        setLiveServices(null);
+      })
+      .finally(() => setOverpassLoading(false));
+  }, [userLocation, isOnline]); // eslint-disable-line react-hooks/exhaustive-deps
+
+  // ── Build display services (live > cache > static) ────────────────────────
+  const allServices: EmergencyService[] = (() => {
+    if (!userLocation) return [];
+
+    const { lat, lng } = userLocation;
+
+    if (liveServices !== null) {
+      // Live/cached data already contains re-enriched towing from overpass.ts
+      return liveServices.filter(s => s.distance <= MAX_RADIUS_KM);
+    }
+
+    // Static fallback — re-compute distances
+    return emergencyServices
+      .map(s => ({
+        ...s,
+        distance: haversineDistance(lat, lng, s.location.lat, s.location.lng),
+      }))
+      .filter(s => s.distance <= MAX_RADIUS_KM)
+      .sort((a, b) => a.distance - b.distance);
+  })();
+
+  // ── Filtered list for selected category (top 3) ───────────────────────────
+  const filteredServices = (() => {
     if (!selectedQuickService) return [];
-    return enrichedServices
-      .filter((svc) => {
-        if (selectedQuickService === 'ambulance') return svc.type === 'ambulance' || svc.type === 'hospital';
-        if (selectedQuickService === 'police') return svc.type === 'police';
-        if (selectedQuickService === 'towing') return svc.type === 'towing' || svc.type === 'puncture';
+    return allServices
+      .filter(s => {
+        if (selectedQuickService === 'ambulance') return s.type === 'ambulance' || s.type === 'hospital';
+        if (selectedQuickService === 'police') return s.type === 'police';
+        if (selectedQuickService === 'towing') return s.type === 'towing' || s.type === 'puncture';
         return false;
       })
       .slice(0, 3);
-  };
+  })();
 
-  const filteredServices = getFilteredServices();
-
-  // Nearest service of each type for the summary cards
+  // Nearest single service per category (for summary cards)
   const nearest = (type: QuickServiceType) => {
-    const candidates = enrichedServices.filter((s) => {
+    return allServices.find(s => {
       if (type === 'ambulance') return s.type === 'ambulance' || s.type === 'hospital';
       if (type === 'police') return s.type === 'police';
       if (type === 'towing') return s.type === 'towing' || s.type === 'puncture';
       return false;
-    });
-    return candidates[0] ?? null;
+    }) ?? null;
   };
 
   const handleServiceClick = (serviceId: string) => navigate(`/service/${serviceId}`);
-  const handleEmergencyCall = () => { window.location.href = 'tel:112'; };
 
   const mapCenter: [number, number] = userLocation
     ? [userLocation.lat, userLocation.lng]
     : [FALLBACK_LOCATION.lat, FALLBACK_LOCATION.lng];
+
+  // Badge text for the "LIVE" pill
+  const badgeText = gpsLoading
+    ? 'LOCATING'
+    : overpassLoading
+    ? 'LOADING'
+    : usingCache
+    ? 'CACHED'
+    : 'LIVE';
 
   return (
     <div className="min-h-screen bg-[#0D0D0D] flex flex-col relative">
@@ -183,11 +231,9 @@ export function HomeScreen() {
 
       {/* Header */}
       <div className="absolute top-0 left-0 right-0 z-20 px-5 pt-6 pb-4 bg-gradient-to-b from-[#0D0D0D]/90 to-transparent">
-        <div className="flex items-center justify-between">
-          <div className="flex items-center gap-2">
-            <Shield className="w-6 h-6 text-[#D62828]" />
-            <h1 className="font-bold text-[#F0F0F0] text-xl">RoadSoS</h1>
-          </div>
+        <div className="flex items-center gap-2">
+          <Shield className="w-6 h-6 text-[#D62828]" />
+          <h1 className="font-bold text-[#F0F0F0] text-xl">RoadSoS</h1>
         </div>
       </div>
 
@@ -211,18 +257,15 @@ export function HomeScreen() {
             />
             <ZoomControl position="bottomright" />
 
-            {/* Fly to real GPS position once resolved */}
             {userLocation && <MapCenterer lat={userLocation.lat} lng={userLocation.lng} />}
 
-            {/* User location marker */}
             {userLocation && (
               <Marker position={[userLocation.lat, userLocation.lng]} icon={userIcon}>
                 <Popup>Your Location</Popup>
               </Marker>
             )}
 
-            {/* Service markers */}
-            {(selectedQuickService ? filteredServices : enrichedServices).map((service) => (
+            {(selectedQuickService ? filteredServices : allServices).map(service => (
               <Marker
                 key={service.id}
                 position={[service.location.lat, service.location.lng]}
@@ -245,21 +288,40 @@ export function HomeScreen() {
       {/* Floating Service Selection Card */}
       <div className="absolute bottom-20 left-0 right-0 z-10 px-4">
         <div className="bg-[#F5F5F5] rounded-3xl shadow-2xl overflow-hidden max-w-md mx-auto">
+
           {!selectedQuickService ? (
             <div className="p-5">
-              <div className="mb-4">
+              {/* Header row */}
+              <div className="mb-3">
                 <div className="text-xs font-semibold text-[#8888AA] mb-1 tracking-wide">DISPATCH CENTER</div>
                 <div className="flex items-center justify-between">
                   <h2 className="font-bold text-[#1A1A2E] text-2xl">Nearest Help</h2>
                   <div className="bg-[#FFB703] text-[#1A1A2E] px-3 py-1 rounded-full text-xs font-bold flex items-center gap-1">
                     <div className="w-2 h-2 bg-[#1A1A2E] rounded-full animate-pulse" />
-                    {gpsLoading ? 'LOCATING' : 'LIVE'}
+                    {badgeText}
                   </div>
                 </div>
               </div>
 
+              {/* Loading pill */}
+              {overpassLoading && (
+                <div className="flex items-center gap-2 mb-3 px-3 py-2 bg-[#FFB703]/10 rounded-xl">
+                  <Loader2 className="w-3.5 h-3.5 text-[#FFB703] animate-spin flex-shrink-0" />
+                  <span className="text-xs text-[#8888AA]">Finding nearby services…</span>
+                </div>
+              )}
+
+              {/* Limited data banner */}
+              {limitedData && !overpassLoading && (
+                <div className="mb-3 px-3 py-2 bg-amber-50 border border-amber-200 rounded-xl">
+                  <p className="text-xs text-amber-700 font-medium">
+                    Limited data in your area — showing available services
+                  </p>
+                </div>
+              )}
+
               <div className="space-y-3">
-                {/* Ambulance */}
+                {/* Ambulance / Hospital */}
                 {(() => {
                   const svc = nearest('ambulance');
                   return (
@@ -276,7 +338,7 @@ export function HomeScreen() {
                           <div className="text-xs text-[#8888AA]">
                             {svc
                               ? `${svc.distance} km away · Est. ${etaMinutes(svc.distance)} min`
-                              : gpsLoading ? 'Locating…' : 'None within 15 km'}
+                              : gpsLoading || overpassLoading ? 'Locating…' : 'None within 15 km'}
                           </div>
                         </div>
                       </div>
@@ -304,7 +366,7 @@ export function HomeScreen() {
                           <div className="text-xs text-[#8888AA]">
                             {svc
                               ? `${svc.distance} km away · Est. ${etaMinutes(svc.distance)} min`
-                              : gpsLoading ? 'Locating…' : 'None within 15 km'}
+                              : gpsLoading || overpassLoading ? 'Locating…' : 'None within 15 km'}
                           </div>
                         </div>
                       </div>
@@ -332,7 +394,7 @@ export function HomeScreen() {
                           <div className="text-xs text-[#8888AA]">
                             {svc
                               ? `${svc.distance} km away · Est. ${etaMinutes(svc.distance)} min`
-                              : gpsLoading ? 'Locating…' : 'None within 15 km'}
+                              : gpsLoading || overpassLoading ? 'Locating…' : 'None within 15 km'}
                           </div>
                         </div>
                       </div>
@@ -344,6 +406,7 @@ export function HomeScreen() {
                 })()}
               </div>
             </div>
+
           ) : (
             <div className="max-h-[70vh] flex flex-col">
               <div className="p-5 border-b border-gray-200 flex items-center justify-between bg-[#F5F5F5] sticky top-0 z-10">
@@ -365,7 +428,7 @@ export function HomeScreen() {
               </div>
 
               <div className="flex-1 overflow-y-auto p-5 space-y-3">
-                {filteredServices.map((service) => (
+                {filteredServices.map(service => (
                   <div
                     key={service.id}
                     className="bg-white rounded-2xl p-4 shadow-sm hover:shadow-md transition-all cursor-pointer"
@@ -387,7 +450,7 @@ export function HomeScreen() {
                       </div>
                       <a
                         href={`tel:${service.phone}`}
-                        onClick={(e) => e.stopPropagation()}
+                        onClick={e => e.stopPropagation()}
                         className={`w-10 h-10 rounded-full flex items-center justify-center ${
                           selectedQuickService === 'ambulance' ? 'bg-[#D62828]' :
                           selectedQuickService === 'police' ? 'bg-[#023E8A]' : 'bg-[#6B5B00]'
