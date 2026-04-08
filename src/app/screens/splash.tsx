@@ -1,27 +1,34 @@
+import { useEffect } from 'react';
 import { motion } from 'motion/react';
 import { Shield, MapPin } from 'lucide-react';
 import { useNavigate } from 'react-router';
 
+const VISITED_KEY = 'roadsos_visited';
+
 export function SplashScreen() {
   const navigate = useNavigate();
-  
+
+  // Returning users skip splash entirely — go straight to home
+  useEffect(() => {
+    if (localStorage.getItem(VISITED_KEY)) {
+      navigate('/home', { replace: true });
+    }
+  }, [navigate]);
+
   const handleStart = () => {
-    // Request location permission
+    localStorage.setItem(VISITED_KEY, '1');
+    // Request location permission then proceed
     if (navigator.geolocation) {
       navigator.geolocation.getCurrentPosition(
-        () => {
-          navigate('/home');
-        },
-        () => {
-          // Even if denied, proceed to app
-          navigate('/home');
-        }
+        () => navigate('/home', { replace: true }),
+        () => navigate('/home', { replace: true }),
+        { timeout: 3000 },
       );
     } else {
-      navigate('/home');
+      navigate('/home', { replace: true });
     }
   };
-  
+
   return (
     <div className="min-h-screen bg-[#0D0D0D] flex flex-col items-center justify-center p-6 relative overflow-hidden">
       {/* Animated background pulse rings */}
@@ -50,7 +57,7 @@ export function SplashScreen() {
           ease: 'easeInOut'
         }}
       />
-      
+
       <motion.div
         initial={{ scale: 0.8, opacity: 0 }}
         animate={{ scale: 1, opacity: 1 }}
@@ -87,7 +94,7 @@ export function SplashScreen() {
             />
           </motion.svg>
         </motion.div>
-        
+
         {/* App Name */}
         <motion.h1
           initial={{ y: 20, opacity: 0 }}
@@ -97,7 +104,7 @@ export function SplashScreen() {
         >
           RoadSoS
         </motion.h1>
-        
+
         {/* Tagline */}
         <motion.p
           initial={{ y: 20, opacity: 0 }}
@@ -107,7 +114,7 @@ export function SplashScreen() {
         >
           Help is always nearby
         </motion.p>
-        
+
         {/* Description */}
         <motion.p
           initial={{ y: 20, opacity: 0 }}
@@ -117,7 +124,7 @@ export function SplashScreen() {
         >
           Locate emergency services instantly, even without internet
         </motion.p>
-        
+
         {/* CTA Button */}
         <motion.button
           initial={{ y: 20, opacity: 0 }}
@@ -131,7 +138,7 @@ export function SplashScreen() {
           <MapPin className="w-5 h-5" />
           Allow Location & Get Started
         </motion.button>
-        
+
         {/* Features */}
         <motion.div
           initial={{ opacity: 0 }}

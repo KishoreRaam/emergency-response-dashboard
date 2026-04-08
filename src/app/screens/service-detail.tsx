@@ -1,16 +1,22 @@
 import { useState, useEffect } from 'react';
-import { useParams, useNavigate } from 'react-router';
-import { Phone, Navigation, Clock, MapPin, Shield, CheckCircle, ArrowLeft, Bed, Building2, Share2, Flag, Locate } from 'lucide-react';
-import { emergencyServices } from '../data/emergency-services';
+import { useParams, useNavigate, useLocation } from 'react-router';
+import { Phone, Navigation, Clock, MapPin, Shield, CheckCircle, ArrowLeft, Bed, Building2, Share2, Flag, Locate, Ambulance } from 'lucide-react';
+import { emergencyServices, type EmergencyService } from '../data/emergency-services';
 import { BottomNav } from '../components/bottom-nav';
-import { buildNavigationUrl } from '../utils/distance';
+import { buildNavigationUrl, etaMinutes } from '../utils/distance';
 
 export function ServiceDetailScreen() {
   const { id } = useParams();
   const navigate = useNavigate();
-  const service = emergencyServices.find(s => s.id === id);
+  const location = useLocation();
+
+  // Try route state first (live OSM services), then static data
+  const stateService = (location.state as any)?.service as EmergencyService | undefined;
+  const stateUserLocation = (location.state as any)?.userLocation as { lat: number; lng: number } | undefined;
+  const service = stateService ?? emergencyServices.find(s => s.id === id) ?? null;
+
   const [isOnline, setIsOnline] = useState(navigator.onLine);
-  const [userLocation, setUserLocation] = useState<{ lat: number; lng: number } | null>(null);
+  const [userLocation, setUserLocation] = useState<{ lat: number; lng: number } | null>(stateUserLocation ?? null);
 
   useEffect(() => {
     const handleOnline = () => setIsOnline(true);
@@ -24,14 +30,15 @@ export function ServiceDetailScreen() {
   }, []);
 
   useEffect(() => {
+    if (userLocation) return; // Already have it from route state
     if (!navigator.geolocation) return;
     navigator.geolocation.getCurrentPosition(
       pos => setUserLocation({ lat: pos.coords.latitude, lng: pos.coords.longitude }),
       () => {},
-      { timeout: 5000, enableHighAccuracy: true },
+      { timeout: 3000, enableHighAccuracy: true },
     );
-  }, []);
-  
+  }, [userLocation]);
+
   if (!service) {
     return (
       <div className="min-h-screen bg-[#0D0D0D] flex items-center justify-center">
@@ -47,11 +54,11 @@ export function ServiceDetailScreen() {
       </div>
     );
   }
-  
+
   const handleCall = () => {
     window.location.href = `tel:${service.phone}`;
   };
-  
+
   const handleNavigate = () => {
     if (!isOnline) return;
     window.open(
@@ -59,7 +66,7 @@ export function ServiceDetailScreen() {
       '_blank'
     );
   };
-  
+
   const handleShare = async () => {
     if (navigator.share) {
       try {
@@ -68,12 +75,31 @@ export function ServiceDetailScreen() {
           text: `${service.name} - ${service.distance}km away`,
           url: window.location.href
         });
-      } catch (err) {
-        console.log('Share cancelled');
+      } catch {
+        // Share cancelled
       }
     }
   };
-  
+
+  const eta = etaMinutes(service.distance);
+
+  const TYPE_COLOR: Record<string, string> = {
+    hospital: '#D62828',
+    ambulance: '#D62828',
+    police: '#023E8A',
+    towing: '#6B5B00',
+    puncture: '#8888AA',
+  };
+  const color = TYPE_COLOR[service.type] ?? '#8888AA';
+
+  const TYPE_LABEL: Record<string, string> = {
+    hospital: 'Hospital',
+    ambulance: 'Ambulance',
+    police: 'Police',
+    towing: 'Tow Service',
+    puncture: 'Mechanic',
+  };
+
   return (
     <div className="min-h-screen bg-[#0D0D0D] pb-20">
       {/* Header */}
@@ -86,20 +112,30 @@ export function ServiceDetailScreen() {
         </button>
         <span className="font-semibold text-[#F0F0F0]">Service Details</span>
       </div>
-      
+
       <div className="p-4 space-y-6">
         {/* Service Header */}
         <div>
           <div className="flex items-start justify-between mb-3">
-            <h1 className="text-2xl font-bold text-[#F0F0F0] flex-1">{service.name}</h1>
-            {service.verified && (
-              <div className="flex items-center gap-1 bg-[#06D6A0]/20 text-[#06D6A0] px-2 py-1 rounded-full text-xs font-medium">
-                <CheckCircle className="w-3 h-3" />
-                Verified
+            <div className="flex-1">
+              <div className="flex items-center gap-2 mb-2">
+                <span
+                  className="px-2 py-0.5 rounded text-[10px] font-bold tracking-wider text-white"
+                  style={{ backgroundColor: color }}
+                >
+                  {TYPE_LABEL[service.type]?.toUpperCase()}
+                </span>
+                {service.verified && (
+                  <div className="flex items-center gap-1 bg-[#06D6A0]/20 text-[#06D6A0] px-2 py-0.5 rounded-full text-[10px] font-medium">
+                    <CheckCircle className="w-3 h-3" />
+                    Verified
+                  </div>
+                )}
               </div>
-            )}
+              <h1 className="text-2xl font-bold text-[#F0F0F0]">{service.name}</h1>
+            </div>
           </div>
-          
+
           <div className="flex items-center gap-2 flex-wrap mb-4">
             {service.traumaLevel && (
               <span className="px-3 py-1.5 rounded-full bg-[#D62828] text-white text-sm font-semibold">
@@ -113,16 +149,22 @@ export function ServiceDetailScreen() {
               </span>
             )}
           </div>
-          
-          <div className="flex items-center gap-2 text-[#8888AA] mb-2">
-            <MapPin className="w-4 h-4" />
-            <span className="text-sm">{service.distance} km away · ~{Math.ceil(service.distance * 3)} min</span>
-          </div>
-          
-          <p className="text-[#8888AA] text-sm">{service.address}</p>
+
+          {service.distance > 0 && (
+            <div className="flex items-center gap-2 text-[#8888AA] mb-2">
+              <MapPin className="w-4 h-4" />
+              <span className="text-sm">{service.distance} km away · ~{eta} min</span>
+            </div>
+          )}
+
+          {service.address ? (
+            <p className="text-[#8888AA] text-sm">{service.address}</p>
+          ) : (
+            <p className="text-[#8888AA]/50 text-sm italic">Address not available</p>
+          )}
         </div>
-        
-        {/* Quick Stats */}
+
+        {/* Quick Stats — hospitals */}
         {service.type === 'hospital' && (
           <div className="bg-[#1A1A2E] rounded-2xl p-4">
             <div className="grid grid-cols-3 gap-4">
@@ -131,7 +173,7 @@ export function ServiceDetailScreen() {
                   <Bed className="w-6 h-6 text-[#D62828]" />
                 </div>
                 <p className="text-xs text-[#8888AA] mb-1">Beds</p>
-                <p className="font-semibold text-[#F0F0F0]">{service.beds}</p>
+                <p className="font-semibold text-[#F0F0F0]">{service.beds ?? '—'}</p>
               </div>
               <div className="text-center">
                 <div className="w-12 h-12 bg-[#D62828]/20 rounded-full flex items-center justify-center mx-auto mb-2">
@@ -145,12 +187,12 @@ export function ServiceDetailScreen() {
                   <Clock className="w-6 h-6 text-[#06D6A0]" />
                 </div>
                 <p className="text-xs text-[#8888AA] mb-1">Available</p>
-                <p className="font-semibold text-[#F0F0F0]">24/7</p>
+                <p className="font-semibold text-[#F0F0F0]">{service.available24x7 ? '24/7' : 'Limited'}</p>
               </div>
             </div>
           </div>
         )}
-        
+
         {/* Contact */}
         <div className="bg-[#1A1A2E] rounded-2xl p-4">
           <h3 className="font-semibold text-[#F0F0F0] mb-3 flex items-center gap-2">
@@ -166,7 +208,27 @@ export function ServiceDetailScreen() {
             Call Now
           </button>
         </div>
-        
+
+        {/* Call Ambulance — for hospitals/police (request an ambulance to this location) */}
+        {(service.type === 'hospital' || service.type === 'police') && (
+          <div className="bg-[#1A1A2E] rounded-2xl p-4">
+            <h3 className="font-semibold text-[#F0F0F0] mb-3 flex items-center gap-2">
+              <Ambulance className="w-4 h-4 text-[#D62828]" />
+              Need an Ambulance?
+            </h3>
+            <p className="text-[#8888AA] text-sm mb-4">
+              Call 108 for a free government ambulance to your location.
+            </p>
+            <a
+              href="tel:108"
+              className="w-full bg-[#D62828]/10 border border-[#D62828]/30 text-[#D62828] px-6 py-3 rounded-full font-semibold flex items-center justify-center gap-2 transition-colors active:scale-95"
+            >
+              <Phone className="w-4 h-4" />
+              Dial 108 — Ambulance
+            </a>
+          </div>
+        )}
+
         {/* Actions */}
         <div className="space-y-3">
           <button
@@ -177,10 +239,10 @@ export function ServiceDetailScreen() {
             <Navigation className="w-5 h-5" />
             {isOnline ? 'Open in Maps' : 'Maps unavailable offline'}
           </button>
-          
+
           {service.distance > 0 && (
             <button
-              onClick={() => navigate(`/tracking/${service.id}`, { state: { userLocation } })}
+              onClick={() => navigate(`/tracking/${service.id}`, { state: { userLocation, liveServices: [service] } })}
               className="w-full border-2 border-[#FFB703] text-[#FFB703] hover:bg-[#FFB703]/10 px-6 py-4 rounded-full font-semibold flex items-center justify-center gap-2 transition-colors active:scale-95"
             >
               <Locate className="w-5 h-5" />
@@ -196,25 +258,14 @@ export function ServiceDetailScreen() {
             Share Location
           </button>
         </div>
-        
-        {/* Map Thumbnail */}
-        <div className="bg-[#1A1A2E] rounded-2xl p-4">
-          <h3 className="font-semibold text-[#F0F0F0] mb-3">Location Map</h3>
-          <div className="w-full h-48 bg-[#2A2A3E] rounded-xl flex items-center justify-center text-[#8888AA]">
-            <div className="text-center">
-              <MapPin className="w-12 h-12 mx-auto mb-2 opacity-50" />
-              <p className="text-sm">Tap "Open in Maps" for directions</p>
-            </div>
-          </div>
-        </div>
-        
+
         {/* Report */}
         <button className="w-full text-[#8888AA] text-sm hover:text-[#F0F0F0] transition-colors flex items-center justify-center gap-2 py-2">
           <Flag className="w-4 h-4" />
           Report outdated info
         </button>
       </div>
-      
+
       <BottomNav />
     </div>
   );

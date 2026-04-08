@@ -1,7 +1,10 @@
 import { useState, useEffect, useRef } from 'react';
 import { MapContainer, TileLayer, Marker, Popup, ZoomControl, useMap } from 'react-leaflet';
-import { Icon } from 'leaflet';
+import { DivIcon } from 'leaflet';
 import 'leaflet/dist/leaflet.css';
+import MarkerClusterGroup from 'react-leaflet-markercluster';
+import 'leaflet.markercluster/dist/MarkerCluster.css';
+import 'leaflet.markercluster/dist/MarkerCluster.Default.css';
 import { Shield, Phone, Ambulance, X, TruckIcon, Loader2, RefreshCw, Navigation } from 'lucide-react';
 import { emergencyServices, type EmergencyService, type ServiceType } from '../data/emergency-services';
 import { OfflineIndicator } from '../components/offline-indicator';
@@ -14,7 +17,7 @@ import { fetchNearbyServices, getCachedServices } from '../services/overpass';
 // ─── Constants ────────────────────────────────────────────────────────────────
 
 const FALLBACK_LOCATION = { lat: 13.0827, lng: 80.2707 };
-const GPS_TIMEOUT_MS = 5000;
+const GPS_TIMEOUT_MS = 3000;
 const STATIC_MAX_RADIUS_KM = 15; // only for Chennai static fallback
 
 // National emergency numbers — always visible regardless of GPS/network state
@@ -68,36 +71,77 @@ function MapCenterer({ lat, lng }: { lat: number; lng: number }) {
   return null;
 }
 
+// ─── Isometric pin markers per service type ─────────────────────────────────
+
+const SERVICE_SVGS: Record<ServiceType, { color: string; symbol: string }> = {
+  hospital: {
+    color: '#D62828',
+    symbol: `<rect x="10" y="9" width="8" height="2.5" rx="0.5" fill="#D62828"/>
+      <rect x="12.75" y="7" width="2.5" height="7" rx="0.5" fill="#D62828"/>
+      <rect x="9" y="15" width="10" height="7" rx="1" fill="none" stroke="#D62828" stroke-width="1.5"/>
+      <rect x="12.5" y="18" width="3" height="4" fill="#D62828"/>`,
+  },
+  police: {
+    color: '#023E8A',
+    symbol: `<path d="M14 7 L18.5 10.5 L17 17 L11 17 L9.5 10.5 Z" fill="#023E8A" stroke="white" stroke-width="0.5"/>
+      <polygon points="14,10 14.8,12.2 17,12.2 15.3,13.5 15.9,15.7 14,14.3 12.1,15.7 12.7,13.5 11,12.2 13.2,12.2" fill="#FFB703"/>`,
+  },
+  ambulance: {
+    color: '#D62828',
+    symbol: `<rect x="6" y="12" width="14" height="8" rx="1.5" fill="#D62828"/>
+      <rect x="17" y="14" width="4" height="6" rx="1" fill="#D62828"/>
+      <circle cx="10" cy="21" r="1.8" fill="#333" stroke="white" stroke-width="0.8"/>
+      <circle cx="18" cy="21" r="1.8" fill="#333" stroke="white" stroke-width="0.8"/>
+      <rect x="9" y="13.5" width="1.5" height="4" rx="0.3" fill="white"/>
+      <rect x="8" y="14.8" width="4" height="1.5" rx="0.3" fill="white"/>
+      <rect x="17.5" y="15" width="3" height="2.5" rx="0.5" fill="#8bcbff"/>`,
+  },
+  towing: {
+    color: '#6B5B00',
+    symbol: `<rect x="5" y="13" width="12" height="7" rx="1.5" fill="#6B5B00"/>
+      <polygon points="17,13 22,16 22,20 17,20" fill="#6B5B00"/>
+      <rect x="17.5" y="16" width="3.5" height="2.5" rx="0.5" fill="#8bcbff"/>
+      <circle cx="9" cy="21" r="1.8" fill="#333" stroke="white" stroke-width="0.8"/>
+      <circle cx="19" cy="21" r="1.8" fill="#333" stroke="white" stroke-width="0.8"/>
+      <line x1="5" y1="13" x2="3" y2="9" stroke="#6B5B00" stroke-width="1.8" stroke-linecap="round"/>
+      <line x1="3" y1="9" x2="7" y2="9" stroke="#6B5B00" stroke-width="1.8" stroke-linecap="round"/>`,
+  },
+  puncture: {
+    color: '#8888AA',
+    symbol: `<path d="M10 8 L9 13 L11.5 15.5 L12 20 L14 20 L14.5 15.5 L17 13 L16 8" fill="none" stroke="#8888AA" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+      <circle cx="13" cy="14" r="1.2" fill="#8888AA"/>`,
+  },
+};
+
 const createCustomIcon = (type: ServiceType) => {
-  const colorMap: Record<ServiceType, string> = {
-    hospital: '#D62828',
-    police: '#023E8A',
-    ambulance: '#D62828',
-    towing: '#6B5B00',
-    puncture: '#8888AA',
-  };
-  const color = colorMap[type] ?? '#8888AA';
-  return new Icon({
-    iconUrl: `data:image/svg+xml;base64,${btoa(`
-      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" width="32" height="32">
-        <path fill="${color}" stroke="white" stroke-width="2" d="M12 0C7.58 0 4 3.58 4 8c0 5.5 8 14 8 14s8-8.5 8-14c0-4.42-3.58-8-8-8zm0 11c-1.66 0-3-1.34-3-3s1.34-3 3-3 3 1.34 3 3-1.34 3-3 3z"/>
-      </svg>
-    `)}`,
-    iconSize: [32, 32],
-    iconAnchor: [16, 32],
-    popupAnchor: [0, -32],
+  const { color, symbol } = SERVICE_SVGS[type] ?? SERVICE_SVGS.puncture;
+  return new DivIcon({
+    html: `<svg xmlns="http://www.w3.org/2000/svg" width="44" height="54" viewBox="0 0 44 54" style="filter:drop-shadow(0 4px 6px rgba(0,0,0,0.4))">
+      <defs><clipPath id="c"><circle cx="22" cy="20" r="18"/></clipPath></defs>
+      <path d="M22 52 C22 52 6 30 6 20 A16 16 0 1 1 38 20 C38 30 22 52 22 52Z" fill="white" stroke="${color}" stroke-width="3"/>
+      <g transform="translate(8,6)" clip-path="url(#c)">${symbol}</g>
+    </svg>`,
+    iconSize: [44, 54],
+    iconAnchor: [22, 54],
+    popupAnchor: [0, -54],
+    className: '',
   });
 };
 
-const userIcon = new Icon({
-  iconUrl: `data:image/svg+xml;base64,${btoa(`
-    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" width="24" height="24">
-      <circle cx="12" cy="12" r="10" fill="#023E8A" stroke="white" stroke-width="3"/>
-      <circle cx="12" cy="12" r="4" fill="white"/>
-    </svg>
-  `)}`,
-  iconSize: [24, 24],
-  iconAnchor: [12, 12],
+const userIcon = new DivIcon({
+  html: `
+    <style>@keyframes userPulse{0%,100%{transform:scale(0.9)}50%{transform:scale(1.1)}}</style>
+    <div style="
+      width:32px;height:32px;border-radius:50%;
+      background:radial-gradient(circle at 35% 35%,#6ab0ff,#023E8A,#011f45);
+      box-shadow:0 6px 16px rgba(2,62,138,0.5),inset -2px -2px 6px rgba(0,0,0,0.3),inset 2px 2px 6px rgba(255,255,255,0.25);
+      border:3px solid white;
+      animation:userPulse 2s ease-in-out infinite;
+    "></div>`,
+  iconSize: [32, 32],
+  iconAnchor: [16, 16],
+  popupAnchor: [0, -16],
+  className: '',
 });
 
 // ─── Component ────────────────────────────────────────────────────────────────
@@ -185,10 +229,10 @@ export function HomeScreen() {
       return;
     }
 
-    // 2. Offline + no cache → nationals will cover the list
+    // 2. Offline + no cache → static data still shows via localServices fallback
     if (!isOnline) return;
 
-    // 3. Fetch from Overpass (tries 3 endpoints)
+    // 3. Fetch from Overpass (all endpoints raced in parallel)
     setOverpassLoading(true);
     setOverpassFailed(false);
     fetchNearbyServices(lat, lng)
@@ -199,7 +243,7 @@ export function HomeScreen() {
         setOverpassFailed(false);
       })
       .catch(() => {
-        // All endpoints failed — nationals keep the list non-empty
+        // All endpoints failed — static data + nationals still show
         setLiveServices(null);
         setOverpassFailed(true);
       })
@@ -254,7 +298,9 @@ export function HomeScreen() {
   const handleServiceClick = (serviceId: string) => {
     // National services have no detail page — call directly
     if (serviceId.startsWith('nat_')) return;
-    navigate(`/service/${serviceId}`);
+    // Pass the service object + location so detail screen works for live OSM services too
+    const svc = localServices.find(s => s.id === serviceId);
+    navigate(`/service/${serviceId}`, { state: { service: svc, userLocation } });
   };
 
   const mapCenter: [number, number] = userLocation
@@ -305,25 +351,46 @@ export function HomeScreen() {
                 <Popup>Your Location</Popup>
               </Marker>
             )}
-            {/* Only real services with valid coords go on the map */}
-            {(selectedQuickService ? filteredServices : localServices)
-              .filter(s => !s.id.startsWith('nat_'))
-              .map(service => (
-                <Marker
-                  key={service.id}
-                  position={[service.location.lat, service.location.lng]}
-                  icon={createCustomIcon(service.type)}
-                >
-                  <Popup>
-                    <div className="text-sm">
-                      <div className="font-semibold mb-1">{service.name}</div>
-                      <div className="text-xs text-gray-600">
-                        {service.distance} km · Est. {etaMinutes(service.distance)} min
+            {/* Service markers — clustered */}
+            <MarkerClusterGroup
+              disableClusteringAtZoom={16}
+              chunkedLoading
+              iconCreateFunction={(cluster: any) => {
+                const count = cluster.getChildCount();
+                return new DivIcon({
+                  html: `<div style="
+                    width:40px;height:40px;border-radius:50%;
+                    background:radial-gradient(circle at 35% 35%,#ff8c42,#D62828,#6a0000);
+                    box-shadow:0 4px 14px rgba(0,0,0,0.5),inset 2px 2px 6px rgba(255,255,255,0.2);
+                    display:flex;align-items:center;justify-content:center;
+                    color:white;font-weight:700;font-size:13px;
+                    border:2px solid rgba(255,255,255,0.6);
+                  ">${count}</div>`,
+                  iconSize: [40, 40],
+                  iconAnchor: [20, 20],
+                  className: '',
+                });
+              }}
+            >
+              {(selectedQuickService ? filteredServices : localServices)
+                .filter(s => !s.id.startsWith('nat_'))
+                .map(service => (
+                  <Marker
+                    key={service.id}
+                    position={[service.location.lat, service.location.lng]}
+                    icon={createCustomIcon(service.type)}
+                  >
+                    <Popup>
+                      <div className="text-sm">
+                        <div className="font-semibold mb-1">{service.name}</div>
+                        <div className="text-xs text-gray-600">
+                          {service.distance} km · Est. {etaMinutes(service.distance)} min
+                        </div>
                       </div>
-                    </div>
-                  </Popup>
-                </Marker>
-              ))}
+                    </Popup>
+                  </Marker>
+                ))}
+            </MarkerClusterGroup>
           </MapContainer>
         )}
       </div>

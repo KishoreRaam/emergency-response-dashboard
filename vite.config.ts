@@ -14,6 +14,31 @@ export default defineConfig({
       registerType: 'autoUpdate',
       injectRegister: 'auto',
       includeAssets: ['apple-touch-icon.png'],
+      workbox: {
+        // Don't intercept API calls or external tile requests
+        navigateFallbackDenylist: [/^\/api/, /^https?:\/\//],
+        // Cache Overpass API responses for offline use
+        runtimeCaching: [
+          {
+            urlPattern: /overpass-api\.de|overpass\.kumi\.systems|lz4\.overpass-api\.de/,
+            handler: 'NetworkFirst',
+            options: {
+              cacheName: 'overpass-api',
+              expiration: { maxEntries: 10, maxAgeSeconds: 7200 },
+              networkTimeoutSeconds: 8,
+            },
+          },
+          {
+            // Cache map tiles for offline use
+            urlPattern: /arcgisonline\.com|tile\.openstreetmap\.org/,
+            handler: 'CacheFirst',
+            options: {
+              cacheName: 'map-tiles',
+              expiration: { maxEntries: 200, maxAgeSeconds: 86400 },
+            },
+          },
+        ],
+      },
       manifest: {
         name: 'RoadSoS',
         short_name: 'RoadSoS',
