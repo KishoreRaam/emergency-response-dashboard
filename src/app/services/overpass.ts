@@ -81,7 +81,7 @@ interface CacheEntry {
 
 // One-time purge of stale cache from broken GPS build.
 // Bump this version string if you ever need to force-clear again.
-const CACHE_VERSION = 'v2';
+const CACHE_VERSION = 'v3';
 const CACHE_VERSION_KEY = 'roadsos_cache_version';
 (function purgeStaleCacheOnce() {
   try {

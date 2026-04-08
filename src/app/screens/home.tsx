@@ -5,7 +5,7 @@ import 'leaflet/dist/leaflet.css';
 import MarkerClusterGroup from 'react-leaflet-markercluster';
 import 'leaflet.markercluster/dist/MarkerCluster.css';
 import 'leaflet.markercluster/dist/MarkerCluster.Default.css';
-import { Shield, Phone, Ambulance, X, TruckIcon, Loader2, RefreshCw, Navigation } from 'lucide-react';
+import { Shield, Phone, Ambulance, X, TruckIcon, Loader2, RefreshCw, Navigation, MapPin } from 'lucide-react';
 import { emergencyServices, type EmergencyService, type ServiceType } from '../data/emergency-services';
 import { OfflineIndicator } from '../components/offline-indicator';
 import { BottomNav } from '../components/bottom-nav';
@@ -157,6 +157,7 @@ export function HomeScreen() {
   const [isOnline, setIsOnline] = useState(navigator.onLine);
   const [userLocation, setUserLocation] = useState<{ lat: number; lng: number } | null>(null);
   const [gpsLoading, setGpsLoading] = useState(true);
+  const [gpsFailed, setGpsFailed] = useState(false);
 
   // Live data states
   const [liveServices, setLiveServices] = useState<EmergencyService[] | null>(null);
@@ -165,6 +166,7 @@ export function HomeScreen() {
   const [limitedData, setLimitedData] = useState(false);
   const [usingCache, setUsingCache] = useState(false);
   const [retryTick, setRetryTick] = useState(0);
+  const [gpsTick, setGpsTick] = useState(0);
 
   // ── Apply ?filter= query param ─────────────────────────────────────────────
   useEffect(() => {
@@ -188,32 +190,28 @@ export function HomeScreen() {
     return () => { window.removeEventListener('online', on); window.removeEventListener('offline', off); };
   }, []);
 
-  // ── GPS with 5-second timeout ──────────────────────────────────────────────
+  // ── GPS — no timeout, let the browser take as long as it needs ─────────────
   useEffect(() => {
     if (!navigator.geolocation) {
-      setUserLocation(FALLBACK_LOCATION);
       setGpsLoading(false);
+      setGpsFailed(true);
       return;
     }
-    const timer = setTimeout(() => {
-      setUserLocation(FALLBACK_LOCATION);
-      setGpsLoading(false);
-    }, GPS_TIMEOUT_MS);
+    setGpsLoading(true);
+    setGpsFailed(false);
     navigator.geolocation.getCurrentPosition(
       pos => {
-        clearTimeout(timer);
         setUserLocation({ lat: pos.coords.latitude, lng: pos.coords.longitude });
         setGpsLoading(false);
+        setGpsFailed(false);
       },
       () => {
-        clearTimeout(timer);
-        setUserLocation(FALLBACK_LOCATION);
         setGpsLoading(false);
+        setGpsFailed(true);
       },
-      { timeout: GPS_TIMEOUT_MS, enableHighAccuracy: true }
+      { enableHighAccuracy: true },
     );
-    return () => clearTimeout(timer);
-  }, []);
+  }, [gpsTick]);
 
   // ── Fetch live data once GPS resolves (re-runs on Retry) ──────────────────
   useEffect(() => {
@@ -333,6 +331,21 @@ export function HomeScreen() {
           <div className="w-full h-full bg-[#1A1A2E] flex flex-col items-center justify-center gap-3">
             <Loader2 className="w-10 h-10 text-[#D62828] animate-spin" />
             <p className="text-[#8888AA] text-sm">Locating you…</p>
+          </div>
+        ) : gpsFailed && !userLocation ? (
+          <div className="w-full h-full bg-[#1A1A2E] flex flex-col items-center justify-center gap-4 px-6">
+            <MapPin className="w-12 h-12 text-[#D62828]" />
+            <p className="text-[#F0F0F0] font-semibold text-lg">Enable Location</p>
+            <p className="text-[#8888AA] text-sm text-center">
+              RoadSoS needs your location to find nearby emergency services.
+            </p>
+            <button
+              onClick={() => setGpsTick(t => t + 1)}
+              className="bg-[#D62828] text-white px-6 py-3 rounded-full font-semibold flex items-center gap-2 active:scale-95 transition-transform"
+            >
+              <RefreshCw className="w-4 h-4" />
+              Retry Location
+            </button>
           </div>
         ) : (
           <MapContainer
