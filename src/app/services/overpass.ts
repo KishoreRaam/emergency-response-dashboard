@@ -3,11 +3,16 @@ import { haversineDistance } from '../utils/distance';
 
 // ─── Constants ────────────────────────────────────────────────────────────────
 
-const OVERPASS_URL = 'https://overpass-api.de/api/interpreter';
+// Multiple endpoints tried in order — first success wins
+const OVERPASS_ENDPOINTS = [
+  'https://overpass-api.de/api/interpreter',
+  'https://overpass.kumi.systems/api/interpreter',
+  'https://lz4.overpass-api.de/api/interpreter',
+];
 const CACHE_KEY = 'roadsos_services_cache';
 const CACHE_MAX_AGE_MS = 2 * 60 * 60 * 1000; // 2 hours
 const CACHE_VALID_RADIUS_KM = 5;
-const OVERPASS_TIMEOUT_MS = 10_000;
+const OVERPASS_TIMEOUT_MS = 15_000; // 15 s per endpoint
 
 // OSM amenity → our ServiceType
 const AMENITY_TYPE_MAP: Record<string, ServiceType> = {
@@ -205,38 +210,48 @@ function parseElements(
 
 function buildQuery(lat: number, lng: number, radiusMeters: number): string {
   const amenities = Object.keys(AMENITY_TYPE_MAP).join('|');
-  // out center gives centroid coords for ways; tags are included by default
   return (
-    `[out:json][timeout:10];` +
+    `[out:json][timeout:15];` +
     `(node["amenity"~"${amenities}"](around:${radiusMeters},${lat},${lng});` +
     `way["amenity"~"${amenities}"](around:${radiusMeters},${lat},${lng}););` +
     `out center;`
   );
 }
 
+// Tries each endpoint in sequence — returns first successful response
 async function queryOverpass(
   lat: number,
   lng: number,
   radiusMeters: number
 ): Promise<OsmElement[]> {
-  const controller = new AbortController();
-  const timer = setTimeout(() => controller.abort(), OVERPASS_TIMEOUT_MS);
+  const body = `data=${encodeURIComponent(buildQuery(lat, lng, radiusMeters))}`;
 
-  try {
-    const res = await fetch(OVERPASS_URL, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
-      body: `data=${encodeURIComponent(buildQuery(lat, lng, radiusMeters))}`,
-      signal: controller.signal,
-    });
-    clearTimeout(timer);
-    if (!res.ok) throw new Error(`Overpass HTTP ${res.status}`);
-    const json: OverpassResponse = await res.json();
-    return json.elements;
-  } catch (err) {
-    clearTimeout(timer);
-    throw err;
+  for (const url of OVERPASS_ENDPOINTS) {
+    const controller = new AbortController();
+    const timer = setTimeout(() => controller.abort(), OVERPASS_TIMEOUT_MS);
+    try {
+      const res = await fetch(url, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+        body,
+        signal: controller.signal,
+      });
+      clearTimeout(timer);
+      if (!res.ok) {
+        console.warn(`[Overpass] ${url} returned ${res.status} — trying next`);
+        continue;
+      }
+      const json: OverpassResponse = await res.json();
+      console.info(`[Overpass] Success via ${url} — ${json.elements.length} elements`);
+      return json.elements;
+    } catch (err) {
+      clearTimeout(timer);
+      console.warn(`[Overpass] ${url} failed:`, err);
+      // continue to next endpoint
+    }
   }
+
+  throw new Error('All Overpass endpoints failed');
 }
 
 // ─── Public API ────────────────────────────────────────────────────────────────
