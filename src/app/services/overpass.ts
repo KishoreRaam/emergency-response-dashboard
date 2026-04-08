@@ -11,7 +11,7 @@ const OVERPASS_ENDPOINTS = [
 const CACHE_KEY = 'roadsos_services_cache';
 const CACHE_MAX_AGE_MS = 2 * 60 * 60 * 1000; // 2 hours
 const CACHE_VALID_RADIUS_KM = 5;
-const OVERPASS_TIMEOUT_MS = 8_000; // 8 s — race all endpoints so this is the total wall time
+const OVERPASS_TIMEOUT_MS = 15_000; // 15 s per endpoint
 
 // OSM amenity → our ServiceType
 const AMENITY_TYPE_MAP: Record<string, ServiceType> = {
@@ -215,42 +215,39 @@ function buildQuery(lat: number, lng: number, radiusMeters: number): string {
   );
 }
 
-// Fire a single endpoint — resolves with elements or rejects
-async function fetchEndpoint(
-  url: string,
-  body: string,
-): Promise<OsmElement[]> {
-  const controller = new AbortController();
-  const timer = setTimeout(() => controller.abort(), OVERPASS_TIMEOUT_MS);
-  try {
-    const res = await fetch(url, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
-      body,
-      signal: controller.signal,
-    });
-    clearTimeout(timer);
-    if (!res.ok) throw new Error(`HTTP ${res.status}`);
-    const json: OverpassResponse = await res.json();
-    console.info(`[Overpass] Success via ${url} — ${json.elements.length} elements`);
-    return json.elements;
-  } catch (err) {
-    clearTimeout(timer);
-    console.warn(`[Overpass] ${url} failed:`, err);
-    throw err;
-  }
-}
-
-// Race ALL endpoints in parallel — first success wins
+// Tries each endpoint in sequence — first success wins
 async function queryOverpass(
   lat: number,
   lng: number,
   radiusMeters: number,
 ): Promise<OsmElement[]> {
   const body = `data=${encodeURIComponent(buildQuery(lat, lng, radiusMeters))}`;
-  return Promise.any(
-    OVERPASS_ENDPOINTS.map(url => fetchEndpoint(url, body)),
-  );
+
+  for (const url of OVERPASS_ENDPOINTS) {
+    const controller = new AbortController();
+    const timer = setTimeout(() => controller.abort(), OVERPASS_TIMEOUT_MS);
+    try {
+      const res = await fetch(url, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+        body,
+        signal: controller.signal,
+      });
+      clearTimeout(timer);
+      if (!res.ok) {
+        console.warn(`[Overpass] ${url} returned ${res.status} — trying next`);
+        continue;
+      }
+      const json: OverpassResponse = await res.json();
+      console.info(`[Overpass] Success via ${url} — ${json.elements.length} elements`);
+      return json.elements;
+    } catch (err) {
+      clearTimeout(timer);
+      console.warn(`[Overpass] ${url} failed:`, err);
+    }
+  }
+
+  throw new Error('All Overpass endpoints failed');
 }
 
 // ─── Public API ────────────────────────────────────────────────────────────────

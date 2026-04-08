@@ -307,9 +307,11 @@ export function HomeScreen() {
     ? [userLocation.lat, userLocation.lng]
     : [FALLBACK_LOCATION.lat, FALLBACK_LOCATION.lng];
 
+  const hasLocalData = localServices.length > 0;
   const badgeText = gpsLoading       ? 'LOCATING'
     : overpassLoading                ? 'LOADING'
     : usingCache                     ? 'CACHED'
+    : overpassFailed && hasLocalData ? 'NEARBY'
     : overpassFailed                 ? 'FALLBACK'
     :                                  'LIVE';
 
@@ -407,7 +409,7 @@ export function HomeScreen() {
                 <div className="flex items-center justify-between">
                   <h2 className="font-bold text-[#1A1A2E] text-2xl">Nearest Help</h2>
                   <div className={`px-3 py-1 rounded-full text-xs font-bold flex items-center gap-1 ${
-                    overpassFailed ? 'bg-amber-100 text-amber-700' : 'bg-[#FFB703] text-[#1A1A2E]'
+                    overpassFailed && !hasLocalData ? 'bg-amber-100 text-amber-700' : 'bg-[#FFB703] text-[#1A1A2E]'
                   }`}>
                     <div className="w-2 h-2 rounded-full animate-pulse bg-current" />
                     {badgeText}
@@ -423,10 +425,10 @@ export function HomeScreen() {
                 </div>
               )}
 
-              {/* Overpass failed — retry banner */}
-              {overpassFailed && !overpassLoading && (
+              {/* Overpass failed — only show error if no static data available */}
+              {overpassFailed && !overpassLoading && !hasLocalData && (
                 <div className="flex items-center justify-between mb-3 px-3 py-2 bg-amber-50 border border-amber-200 rounded-xl">
-                  <p className="text-xs text-amber-700">Map data unavailable — hotlines active</p>
+                  <p className="text-xs text-amber-700">Live data unavailable — hotlines active</p>
                   <button
                     onClick={() => setRetryTick(t => t + 1)}
                     className="flex items-center gap-1 text-xs font-semibold text-[#D62828] ml-2 shrink-0"
