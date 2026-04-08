@@ -11,8 +11,8 @@ export default defineConfig({
     react(),
     tailwindcss(),
     VitePWA({
-      registerType: 'autoUpdate',
-      injectRegister: 'auto',
+      registerType: 'prompt',
+      injectRegister: false,
       includeAssets: ['apple-touch-icon.png'],
       workbox: {
         // Don't intercept API calls or external tile requests
