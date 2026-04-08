@@ -268,17 +268,23 @@ export async function fetchNearbyServices(
   userLat: number,
   userLng: number
 ): Promise<FetchResult> {
-  // First pass — 10 km (all endpoints raced in parallel)
+  const MAX_SERVICES = 15;
+
+  // First pass — 10 km
   let elements = await queryOverpass(userLat, userLng, 10_000);
   let parsed = parseElements(elements, userLat, userLng);
-  let deduped = deduplicateByProximity(parsed);
+  let deduped = deduplicateByProximity(parsed)
+    .sort((a, b) => a.distance - b.distance)
+    .slice(0, MAX_SERVICES);
 
   // Auto-retry at 20 km if sparse results
   if (deduped.length < 3) {
     try {
       elements = await queryOverpass(userLat, userLng, 20_000);
       parsed = parseElements(elements, userLat, userLng);
-      deduped = deduplicateByProximity(parsed);
+      deduped = deduplicateByProximity(parsed)
+        .sort((a, b) => a.distance - b.distance)
+        .slice(0, MAX_SERVICES);
     } catch {
       // Keep the few results we got from 10 km
     }
