@@ -79,6 +79,19 @@ interface CacheEntry {
   services: EmergencyService[];
 }
 
+// One-time purge of stale cache from broken GPS build.
+// Bump this version string if you ever need to force-clear again.
+const CACHE_VERSION = 'v2';
+const CACHE_VERSION_KEY = 'roadsos_cache_version';
+(function purgeStaleCacheOnce() {
+  try {
+    if (localStorage.getItem(CACHE_VERSION_KEY) !== CACHE_VERSION) {
+      localStorage.removeItem(CACHE_KEY);
+      localStorage.setItem(CACHE_VERSION_KEY, CACHE_VERSION);
+    }
+  } catch { /* ignore */ }
+})();
+
 function loadCache(): CacheEntry | null {
   try {
     const raw = localStorage.getItem(CACHE_KEY);
