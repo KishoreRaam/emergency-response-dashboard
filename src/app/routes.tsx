@@ -5,6 +5,10 @@ import { ServiceDetailScreen } from './screens/service-detail';
 import { AIAssistantScreen } from './screens/ai-assistant';
 import { SearchScreen } from './screens/search';
 import { SettingsScreen } from './screens/settings';
+import { SettingsNotificationsScreen } from './screens/settings-notifications';
+import { SettingsLocationScreen } from './screens/settings-location';
+import { SettingsAppInfoScreen } from './screens/settings-app-info';
+import { SettingsPrivacyScreen } from './screens/settings-privacy';
 import { FirstAidScreen } from './screens/first-aid';
 import { InjuryDetailScreen } from './screens/injury-detail';
 import { TrackingScreen } from './screens/tracking';
@@ -45,6 +49,22 @@ export const router = createBrowserRouter([
   {
     path: '/settings',
     Component: SettingsScreen
+  },
+  {
+    path: '/settings/notifications',
+    Component: SettingsNotificationsScreen
+  },
+  {
+    path: '/settings/location',
+    Component: SettingsLocationScreen
+  },
+  {
+    path: '/settings/app-info',
+    Component: SettingsAppInfoScreen
+  },
+  {
+    path: '/settings/privacy',
+    Component: SettingsPrivacyScreen
   },
   {
     path: '*',

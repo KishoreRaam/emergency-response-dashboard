@@ -16,9 +16,8 @@ import { fetchNearbyServices, getCachedServices } from '../services/overpass';
 
 // ─── Constants ────────────────────────────────────────────────────────────────
 
-const FALLBACK_LOCATION = { lat: 13.0827, lng: 80.2707 };
-const GPS_TIMEOUT_MS = 5000;
-const STATIC_MAX_RADIUS_KM = 15; // only for Chennai static fallback
+const GPS_SESSION_KEY = 'roadsos_user_location';
+const STATIC_MAX_RADIUS_KM = 15;
 
 // National emergency numbers — always visible regardless of GPS/network state
 const NATIONAL_SERVICES: EmergencyService[] = [
@@ -155,8 +154,17 @@ export function HomeScreen() {
 
   const [selectedQuickService, setSelectedQuickService] = useState<QuickServiceType | null>(null);
   const [isOnline, setIsOnline] = useState(navigator.onLine);
-  const [userLocation, setUserLocation] = useState<{ lat: number; lng: number } | null>(null);
-  const [gpsLoading, setGpsLoading] = useState(true);
+
+  // Restore last-known location from session so navigating back doesn't flash a loading screen
+  const [userLocation, setUserLocation] = useState<{ lat: number; lng: number } | null>(() => {
+    try {
+      const saved = sessionStorage.getItem(GPS_SESSION_KEY);
+      return saved ? JSON.parse(saved) : null;
+    } catch { return null; }
+  });
+  const [gpsLoading, setGpsLoading] = useState(() => {
+    try { return !sessionStorage.getItem(GPS_SESSION_KEY); } catch { return true; }
+  });
   const [gpsFailed, setGpsFailed] = useState(false);
 
   // Live data states
@@ -197,13 +205,17 @@ export function HomeScreen() {
       setGpsFailed(true);
       return;
     }
-    setGpsLoading(true);
+    // Only show loading spinner if we don't already have a cached location
+    const hasCached = !!sessionStorage.getItem(GPS_SESSION_KEY);
+    if (!hasCached) setGpsLoading(true);
     setGpsFailed(false);
     navigator.geolocation.getCurrentPosition(
       pos => {
-        setUserLocation({ lat: pos.coords.latitude, lng: pos.coords.longitude });
+        const loc = { lat: pos.coords.latitude, lng: pos.coords.longitude };
+        setUserLocation(loc);
         setGpsLoading(false);
         setGpsFailed(false);
+        try { sessionStorage.setItem(GPS_SESSION_KEY, JSON.stringify(loc)); } catch {}
       },
       () => {
         setGpsLoading(false);
@@ -303,7 +315,7 @@ export function HomeScreen() {
 
   const mapCenter: [number, number] = userLocation
     ? [userLocation.lat, userLocation.lng]
-    : [FALLBACK_LOCATION.lat, FALLBACK_LOCATION.lng];
+    : [20.5937, 78.9629]; // India center — only used momentarily if GPS is very slow
 
   const hasLocalData = localServices.length > 0;
   const badgeText = gpsLoading       ? 'LOCATING'
