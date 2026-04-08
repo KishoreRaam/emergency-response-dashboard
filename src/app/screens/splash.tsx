@@ -22,7 +22,7 @@ export function SplashScreen() {
       navigator.geolocation.getCurrentPosition(
         () => navigate('/home', { replace: true }),
         () => navigate('/home', { replace: true }),
-        { timeout: 3000 },
+        { timeout: 5000 },
       );
     } else {
       navigate('/home', { replace: true });

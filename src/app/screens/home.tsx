@@ -17,7 +17,7 @@ import { fetchNearbyServices, getCachedServices } from '../services/overpass';
 // ─── Constants ────────────────────────────────────────────────────────────────
 
 const FALLBACK_LOCATION = { lat: 13.0827, lng: 80.2707 };
-const GPS_TIMEOUT_MS = 3000;
+const GPS_TIMEOUT_MS = 5000;
 const STATIC_MAX_RADIUS_KM = 15; // only for Chennai static fallback
 
 // National emergency numbers — always visible regardless of GPS/network state

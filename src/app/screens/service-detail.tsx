@@ -35,7 +35,7 @@ export function ServiceDetailScreen() {
     navigator.geolocation.getCurrentPosition(
       pos => setUserLocation({ lat: pos.coords.latitude, lng: pos.coords.longitude }),
       () => {},
-      { timeout: 3000, enableHighAccuracy: true },
+      { timeout: 5000, enableHighAccuracy: true },
     );
   }, [userLocation]);
 
