@@ -2,7 +2,7 @@ import { useState, useEffect, useRef } from 'react';
 import { MapContainer, TileLayer, Marker, Popup, ZoomControl, useMap } from 'react-leaflet';
 import { Icon } from 'leaflet';
 import 'leaflet/dist/leaflet.css';
-import { Shield, Phone, Ambulance, X, TruckIcon, Loader2, RefreshCw } from 'lucide-react';
+import { Shield, Phone, Ambulance, X, TruckIcon, Loader2, RefreshCw, Navigation } from 'lucide-react';
 import { emergencyServices, type EmergencyService, type ServiceType } from '../data/emergency-services';
 import { OfflineIndicator } from '../components/offline-indicator';
 import { BottomNav } from '../components/bottom-nav';
@@ -294,8 +294,9 @@ export function HomeScreen() {
             zoomControl={false}
           >
             <TileLayer
-              url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
-              attribution='&copy; OpenStreetMap contributors'
+              url="https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}"
+              attribution="Tiles &copy; Esri &mdash; Source: Esri, Maxar, Earthstar Geographics"
+              maxZoom={19}
             />
             <ZoomControl position="bottomright" />
             {userLocation && <MapCenterer lat={userLocation.lat} lng={userLocation.lng} />}
@@ -515,16 +516,29 @@ export function HomeScreen() {
                           ? 'Nationwide hotline'
                           : `${service.distance} km · Est. ${etaMinutes(service.distance)} min`}
                       </div>
-                      <a
-                        href={`tel:${service.phone}`}
-                        onClick={e => e.stopPropagation()}
-                        className={`w-10 h-10 rounded-full flex items-center justify-center ${
-                          selectedQuickService === 'ambulance' ? 'bg-[#D62828]' :
-                          selectedQuickService === 'police' ? 'bg-[#023E8A]' : 'bg-[#6B5B00]'
-                        }`}
-                      >
-                        <Phone className="w-5 h-5 text-white" />
-                      </a>
+                      <div className="flex items-center gap-2">
+                        {!service.id.startsWith('nat_') && (
+                          <button
+                            onClick={e => {
+                              e.stopPropagation();
+                              navigate(`/tracking/${service.id}`, { state: { userLocation, liveServices: localServices } });
+                            }}
+                            className="w-10 h-10 rounded-full flex items-center justify-center bg-[#1A1A2E]/10 border border-[#8888AA]/20"
+                          >
+                            <Navigation className="w-4 h-4 text-[#1A1A2E]" />
+                          </button>
+                        )}
+                        <a
+                          href={`tel:${service.phone}`}
+                          onClick={e => e.stopPropagation()}
+                          className={`w-10 h-10 rounded-full flex items-center justify-center ${
+                            selectedQuickService === 'ambulance' ? 'bg-[#D62828]' :
+                            selectedQuickService === 'police' ? 'bg-[#023E8A]' : 'bg-[#6B5B00]'
+                          }`}
+                        >
+                          <Phone className="w-5 h-5 text-white" />
+                        </a>
+                      </div>
                     </div>
                   </div>
                 ))}

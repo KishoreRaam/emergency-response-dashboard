@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router';
-import { Phone, Navigation, Clock, MapPin, Shield, CheckCircle, ArrowLeft, Bed, Building2, Share2, Flag } from 'lucide-react';
+import { Phone, Navigation, Clock, MapPin, Shield, CheckCircle, ArrowLeft, Bed, Building2, Share2, Flag, Locate } from 'lucide-react';
 import { emergencyServices } from '../data/emergency-services';
 import { BottomNav } from '../components/bottom-nav';
 import { buildNavigationUrl } from '../utils/distance';
@@ -10,6 +10,7 @@ export function ServiceDetailScreen() {
   const navigate = useNavigate();
   const service = emergencyServices.find(s => s.id === id);
   const [isOnline, setIsOnline] = useState(navigator.onLine);
+  const [userLocation, setUserLocation] = useState<{ lat: number; lng: number } | null>(null);
 
   useEffect(() => {
     const handleOnline = () => setIsOnline(true);
@@ -20,6 +21,15 @@ export function ServiceDetailScreen() {
       window.removeEventListener('online', handleOnline);
       window.removeEventListener('offline', handleOffline);
     };
+  }, []);
+
+  useEffect(() => {
+    if (!navigator.geolocation) return;
+    navigator.geolocation.getCurrentPosition(
+      pos => setUserLocation({ lat: pos.coords.latitude, lng: pos.coords.longitude }),
+      () => {},
+      { timeout: 5000, enableHighAccuracy: true },
+    );
   }, []);
   
   if (!service) {
@@ -168,6 +178,16 @@ export function ServiceDetailScreen() {
             {isOnline ? 'Open in Maps' : 'Maps unavailable offline'}
           </button>
           
+          {service.distance > 0 && (
+            <button
+              onClick={() => navigate(`/tracking/${service.id}`, { state: { userLocation } })}
+              className="w-full border-2 border-[#FFB703] text-[#FFB703] hover:bg-[#FFB703]/10 px-6 py-4 rounded-full font-semibold flex items-center justify-center gap-2 transition-colors active:scale-95"
+            >
+              <Locate className="w-5 h-5" />
+              Track Vehicle
+            </button>
+          )}
+
           <button
             onClick={handleShare}
             className="w-full border-2 border-[#8888AA]/30 text-[#F0F0F0] hover:bg-[#8888AA]/10 px-6 py-4 rounded-full font-semibold flex items-center justify-center gap-2 transition-colors active:scale-95"

@@ -7,6 +7,7 @@ import { SearchScreen } from './screens/search';
 import { SettingsScreen } from './screens/settings';
 import { FirstAidScreen } from './screens/first-aid';
 import { InjuryDetailScreen } from './screens/injury-detail';
+import { TrackingScreen } from './screens/tracking';
 
 export const router = createBrowserRouter([
   {
@@ -36,6 +37,10 @@ export const router = createBrowserRouter([
   {
     path: '/first-aid/:id',
     Component: InjuryDetailScreen
+  },
+  {
+    path: '/tracking/:serviceId',
+    Component: TrackingScreen
   },
   {
     path: '/settings',
