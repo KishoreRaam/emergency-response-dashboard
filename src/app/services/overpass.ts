@@ -3,13 +3,6 @@ import { haversineDistance } from '../utils/distance';
 
 // ─── Constants ────────────────────────────────────────────────────────────────
 
-const OVERPASS_ENDPOINTS = [
-  'https://overpass-api.de/api/interpreter',
-  'https://overpass.kumi.systems/api/interpreter',
-  'https://lz4.overpass-api.de/api/interpreter',
-  'https://maps.mail.ru/osm/tools/overpass/api/interpreter',
-  'https://overpass.openstreetmap.ru/api/interpreter',
-];
 const CACHE_KEY = 'roadsos_services_cache';
 const CACHE_MAX_AGE_MS = 2 * 60 * 60 * 1000; // 2 hours
 const CACHE_VALID_RADIUS_KM = 5;
@@ -230,7 +223,6 @@ function buildQuery(lat: number, lng: number, radiusMeters: number): string {
   );
 }
 
-// Races all endpoints in parallel — first success wins, rest are cancelled
 async function queryOverpass(
   lat: number,
   lng: number,
@@ -238,32 +230,25 @@ async function queryOverpass(
 ): Promise<OsmElement[]> {
   const body = `data=${encodeURIComponent(buildQuery(lat, lng, radiusMeters))}`;
 
-  // Shared abort controller — cancelled once any endpoint succeeds
-  const shared = new AbortController();
-  const globalTimer = setTimeout(() => shared.abort(), OVERPASS_TIMEOUT_MS);
+  const controller = new AbortController();
+  const timer = setTimeout(() => controller.abort(), OVERPASS_TIMEOUT_MS);
 
-  const tryEndpoint = async (url: string): Promise<OsmElement[]> => {
-    const res = await fetch(url, {
+  try {
+    const res = await fetch('/api/overpass', {
       method: 'POST',
       headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
       body,
-      signal: shared.signal,
+      signal: controller.signal,
     });
-    if (!res.ok) throw new Error(`${url} returned ${res.status}`);
+    clearTimeout(timer);
+    if (!res.ok) throw new Error(`Proxy returned ${res.status}`);
     const json: OverpassResponse = await res.json();
-    console.info(`[Overpass] Success via ${url} — ${json.elements.length} elements`);
-    shared.abort(); // cancel the remaining in-flight requests
+    console.info(`[Overpass] Success — ${json.elements.length} elements`);
     return json.elements;
-  };
-
-  try {
-    const elements = await Promise.any(OVERPASS_ENDPOINTS.map(tryEndpoint));
-    clearTimeout(globalTimer);
-    return elements;
   } catch (err) {
-    clearTimeout(globalTimer);
-    console.warn('[Overpass] All endpoints failed:', err);
-    throw new Error('All Overpass endpoints failed');
+    clearTimeout(timer);
+    console.warn('[Overpass] Proxy request failed:', err);
+    throw new Error('Overpass proxy failed');
   }
 }
 

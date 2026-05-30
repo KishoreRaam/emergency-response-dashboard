@@ -20,7 +20,7 @@ export default defineConfig({
         // Cache Overpass API responses for offline use
         runtimeCaching: [
           {
-            urlPattern: /overpass-api\.de|overpass\.kumi\.systems|lz4\.overpass-api\.de/,
+            urlPattern: /\/api\/overpass/,
             handler: 'NetworkFirst',
             options: {
               cacheName: 'overpass-api',
