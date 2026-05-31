@@ -221,13 +221,13 @@ export function AIAssistantScreen() {
   };
 
   return (
-    <div className="min-h-screen bg-[#0D0D0D] pb-20 flex flex-col">
+    <div className="min-h-screen bg-[#FAFBFC] pb-20 flex flex-col">
       {/* Header */}
-      <div className="bg-[#1A1A2E] px-4 py-4 border-b border-[#8888AA]/20">
-        <h1 className="font-bold text-[#F0F0F0] text-lg mb-1">AI First Aid Assistant</h1>
-        <p className="text-sm text-[#8888AA] flex items-center gap-2">
+      <div className="bg-[#FFFFFF] px-4 py-4 border-b border-[#E5E7EB]">
+        <h1 className="font-bold text-[#111827] text-lg mb-1">AI First Aid Assistant</h1>
+        <p className="text-sm text-[#6B7280] flex items-center gap-2">
           Powered by OpenRouter
-          <span className="px-2 py-0.5 bg-[#06D6A0]/20 text-[#06D6A0] rounded text-xs font-medium">
+          <span className="px-2 py-0.5 bg-[#10B981]/20 text-[#10B981] rounded text-xs font-medium">
             Beta
           </span>
         </p>
@@ -243,12 +243,12 @@ export function AIAssistantScreen() {
             <div
               className={`max-w-[85%] rounded-2xl px-4 py-3 ${
                 message.type === 'user'
-                  ? 'bg-[#D62828] text-white'
+                  ? 'bg-[#4F46E5] text-white'
                   : message.isOffline
-                  ? 'bg-amber-900/40 border border-amber-500/40 text-[#F0F0F0]'
+                  ? 'bg-amber-50 border border-amber-200 text-[#111827]'
                   : message.isError
-                  ? 'bg-red-900/40 border border-red-500/40 text-red-300'
-                  : 'bg-[#1A1A2E] text-[#F0F0F0]'
+                  ? 'bg-red-50 border border-red-200 text-red-700'
+                  : 'bg-[#FFFFFF] text-[#111827] border border-[#E5E7EB]'
               }`}
             >
               <p className="whitespace-pre-line text-sm leading-relaxed">{message.content}</p>
@@ -275,10 +275,10 @@ export function AIAssistantScreen() {
         {/* Typing indicator */}
         {isTyping && (
           <div className="flex justify-start">
-            <div className="bg-[#1A1A2E] rounded-2xl px-4 py-3 flex items-center gap-1">
-              <span className="w-2 h-2 bg-[#8888AA] rounded-full animate-bounce [animation-delay:0ms]" />
-              <span className="w-2 h-2 bg-[#8888AA] rounded-full animate-bounce [animation-delay:150ms]" />
-              <span className="w-2 h-2 bg-[#8888AA] rounded-full animate-bounce [animation-delay:300ms]" />
+            <div className="bg-[#FFFFFF] border border-[#E5E7EB] rounded-2xl px-4 py-3 flex items-center gap-1">
+              <span className="w-2 h-2 bg-[#6B7280] rounded-full animate-bounce [animation-delay:0ms]" />
+              <span className="w-2 h-2 bg-[#6B7280] rounded-full animate-bounce [animation-delay:150ms]" />
+              <span className="w-2 h-2 bg-[#6B7280] rounded-full animate-bounce [animation-delay:300ms]" />
             </div>
           </div>
         )}
@@ -287,14 +287,14 @@ export function AIAssistantScreen() {
       {/* Quick Prompts — shown until conversation starts */}
       {messages.length === 1 && (
         <div className="px-4 pb-3">
-          <p className="text-xs text-[#8888AA] mb-2">Quick situations:</p>
+          <p className="text-xs text-[#6B7280] mb-2">Quick situations:</p>
           <div className="flex flex-wrap gap-2">
             {quickPrompts.map(prompt => (
               <button
                 key={prompt}
                 onClick={() => handleQuickPrompt(prompt)}
                 disabled={isResponding}
-                className="px-3 py-1.5 bg-[#1A1A2E] text-[#F0F0F0] rounded-full text-xs font-medium hover:bg-[#222233] transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                className="px-3 py-1.5 bg-[#FFFFFF] text-[#111827] border border-[#E5E7EB] rounded-full text-xs font-medium hover:bg-[#F3F4F6] transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
               >
                 {prompt}
               </button>
@@ -304,21 +304,21 @@ export function AIAssistantScreen() {
       )}
 
       {/* Input */}
-      <div className="border-t border-[#8888AA]/20 bg-[#1A1A2E] p-4">
+      <div className="border-t border-[#E5E7EB] bg-[#FFFFFF] p-4">
         <div className="flex gap-2 items-end">
-          <div className="flex-1 bg-[#0D0D0D] rounded-2xl px-4 py-3 flex items-center gap-2">
+          <div className="flex-1 bg-[#F3F4F6] rounded-2xl px-4 py-3 flex items-center gap-2">
             <input
               type="text"
               value={input}
               onChange={e => setInput(e.target.value)}
               onKeyPress={e => e.key === 'Enter' && handleSend()}
               placeholder="Describe the emergency..."
-              className="flex-1 bg-transparent text-[#F0F0F0] placeholder:text-[#8888AA] outline-none text-sm"
+              className="flex-1 bg-transparent text-[#111827] placeholder:text-[#9CA3AF] outline-none text-sm"
             />
             <button
               onClick={handleMic}
               className={`transition-colors ${
-                isListening ? 'text-red-500' : 'text-[#8888AA] hover:text-[#F0F0F0]'
+                isListening ? 'text-red-500' : 'text-[#6B7280] hover:text-[#111827]'
               }`}
             >
               <Mic className="w-5 h-5" />
@@ -327,13 +327,13 @@ export function AIAssistantScreen() {
           <button
             onClick={handleSend}
             disabled={!input.trim() || isResponding}
-            className="w-12 h-12 bg-[#D62828] hover:bg-[#B81F1F] disabled:bg-[#8888AA]/20 disabled:text-[#8888AA] text-white rounded-full flex items-center justify-center transition-colors active:scale-95"
+            className="w-12 h-12 bg-[#4F46E5] hover:bg-[#4338CA] disabled:bg-[#E5E7EB] disabled:text-[#9CA3AF] text-white rounded-full flex items-center justify-center transition-colors active:scale-95"
           >
             <Send className="w-5 h-5" />
           </button>
         </div>
 
-        <p className="text-[10px] text-[#8888AA] mt-2 text-center">
+        <p className="text-[10px] text-[#6B7280] mt-2 text-center">
           AI guidance is not a substitute for professional medical care
         </p>
       </div>

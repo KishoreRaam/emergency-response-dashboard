@@ -30,10 +30,10 @@ export function SplashScreen() {
   };
 
   return (
-    <div className="min-h-screen bg-[#0D0D0D] flex flex-col items-center justify-center p-6 relative overflow-hidden">
+    <div className="min-h-screen bg-[#FAFBFC] flex flex-col items-center justify-center p-6 relative overflow-hidden">
       {/* Animated background pulse rings */}
       <motion.div
-        className="absolute w-64 h-64 rounded-full border-2 border-[#D62828]"
+        className="absolute w-64 h-64 rounded-full border-2 border-[#4F46E5]"
         animate={{
           scale: [1, 2, 1],
           opacity: [0.5, 0, 0.5]
@@ -45,7 +45,7 @@ export function SplashScreen() {
         }}
       />
       <motion.div
-        className="absolute w-64 h-64 rounded-full border-2 border-[#D62828]"
+        className="absolute w-64 h-64 rounded-full border-2 border-[#4F46E5]"
         animate={{
           scale: [1, 2.5, 1],
           opacity: [0.3, 0, 0.3]
@@ -66,12 +66,12 @@ export function SplashScreen() {
       >
         {/* Logo */}
         <motion.div
-          className="w-28 h-28 bg-gradient-to-br from-[#D62828] to-[#A01F1F] rounded-3xl flex items-center justify-center mx-auto mb-8 shadow-2xl relative"
+          className="w-28 h-28 bg-gradient-to-br from-[#4F46E5] to-[#4338CA] rounded-3xl flex items-center justify-center mx-auto mb-8 shadow-2xl relative"
           animate={{
             boxShadow: [
-              '0 0 40px rgba(214, 40, 40, 0.3)',
-              '0 0 60px rgba(214, 40, 40, 0.5)',
-              '0 0 40px rgba(214, 40, 40, 0.3)'
+              '0 0 40px rgba(79, 70, 229, 0.3)',
+              '0 0 60px rgba(79, 70, 229, 0.5)',
+              '0 0 40px rgba(79, 70, 229, 0.3)'
             ]
           }}
           transition={{ duration: 2, repeat: Infinity }}
@@ -100,7 +100,7 @@ export function SplashScreen() {
           initial={{ y: 20, opacity: 0 }}
           animate={{ y: 0, opacity: 1 }}
           transition={{ delay: 0.3 }}
-          className="text-5xl font-bold text-[#F0F0F0] mb-3"
+          className="text-5xl font-bold text-[#111827] mb-3"
         >
           RoadSoS
         </motion.h1>
@@ -110,7 +110,7 @@ export function SplashScreen() {
           initial={{ y: 20, opacity: 0 }}
           animate={{ y: 0, opacity: 1 }}
           transition={{ delay: 0.4 }}
-          className="text-xl text-[#06D6A0] mb-2 font-medium"
+          className="text-xl text-[#10B981] mb-2 font-medium"
         >
           Help is always nearby
         </motion.p>
@@ -120,7 +120,7 @@ export function SplashScreen() {
           initial={{ y: 20, opacity: 0 }}
           animate={{ y: 0, opacity: 1 }}
           transition={{ delay: 0.5 }}
-          className="text-[#8888AA] mb-12 max-w-sm mx-auto leading-relaxed"
+          className="text-[#6B7280] mb-12 max-w-sm mx-auto leading-relaxed"
         >
           Locate emergency services instantly, even without internet
         </motion.p>
@@ -133,7 +133,7 @@ export function SplashScreen() {
           whileHover={{ scale: 1.05 }}
           whileTap={{ scale: 0.95 }}
           onClick={handleStart}
-          className="bg-[#D62828] hover:bg-[#B81F1F] text-white px-8 py-4 rounded-full font-semibold flex items-center gap-3 mx-auto shadow-2xl transition-colors"
+          className="bg-[#4F46E5] hover:bg-[#4338CA] text-white px-8 py-4 rounded-full font-semibold flex items-center gap-3 mx-auto shadow-2xl transition-colors"
         >
           <MapPin className="w-5 h-5" />
           Allow Location & Get Started
@@ -144,15 +144,15 @@ export function SplashScreen() {
           initial={{ opacity: 0 }}
           animate={{ opacity: 1 }}
           transition={{ delay: 0.8 }}
-          className="flex items-center justify-center gap-4 mt-8 text-xs text-[#8888AA]"
+          className="flex items-center justify-center gap-4 mt-8 text-xs text-[#6B7280]"
         >
           <span className="flex items-center gap-1">
-            <div className="w-1.5 h-1.5 rounded-full bg-[#06D6A0]" />
+            <div className="w-1.5 h-1.5 rounded-full bg-[#10B981]" />
             Works offline
           </span>
           <span>·</span>
           <span className="flex items-center gap-1">
-            <div className="w-1.5 h-1.5 rounded-full bg-[#06D6A0]" />
+            <div className="w-1.5 h-1.5 rounded-full bg-[#10B981]" />
             No sign-up required
           </span>
         </motion.div>

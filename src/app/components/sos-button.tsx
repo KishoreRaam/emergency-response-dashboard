@@ -44,13 +44,13 @@ export function SosButton() {
       <motion.button
         onMouseDown={handleLongPressStart}
         onTouchStart={handleLongPressStart}
-        className="fixed bottom-24 right-6 w-16 h-16 bg-[#D62828] rounded-full flex items-center justify-center shadow-2xl z-50 group"
+        className="fixed bottom-24 right-6 w-16 h-16 bg-[#DC2626] rounded-full flex items-center justify-center shadow-2xl z-50 group"
         whileHover={{ scale: 1.1 }}
         whileTap={{ scale: 0.95 }}
         animate={{
           boxShadow: [
-            '0 0 0 0 rgba(214, 40, 40, 0.7)',
-            '0 0 0 20px rgba(214, 40, 40, 0)',
+            '0 0 0 0 rgba(220, 38, 38, 0.7)',
+            '0 0 0 20px rgba(220, 38, 38, 0)',
           ]
         }}
         transition={{
@@ -60,18 +60,18 @@ export function SosButton() {
         }}
       >
         <AlertTriangle className="w-8 h-8 text-white" />
-        <div className="absolute -top-12 right-0 bg-[#1A1A2E] text-[#F0F0F0] px-3 py-1.5 rounded-lg text-xs font-medium whitespace-nowrap opacity-0 group-hover:opacity-100 transition-opacity shadow-lg">
+        <div className="absolute -top-12 right-0 bg-[#111827] text-[#F9FAFB] px-3 py-1.5 rounded-lg text-xs font-medium whitespace-nowrap opacity-0 group-hover:opacity-100 transition-opacity shadow-lg">
           Hold for SOS
         </div>
       </motion.button>
-      
+
       <AnimatePresence>
         {showPanel && (
           <motion.div
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
-            className="fixed inset-0 bg-[#D62828]/95 z-[100] flex flex-col items-center justify-center p-6"
+            className="fixed inset-0 bg-[#DC2626]/95 z-[100] flex flex-col items-center justify-center p-6"
             onClick={handleCancel}
           >
             <motion.div
@@ -127,7 +127,7 @@ export function SosButton() {
                     e.stopPropagation();
                     handleQuickDial(emergency.number);
                   }}
-                  className="w-full bg-white text-[#D62828] px-6 py-4 rounded-full text-lg font-bold flex items-center justify-between hover:bg-white/90 transition-colors active:scale-95"
+                  className="w-full bg-white text-[#DC2626] px-6 py-4 rounded-full text-lg font-bold flex items-center justify-between hover:bg-white/90 transition-colors active:scale-95"
                 >
                   <span>{emergency.name}</span>
                   <div className="flex items-center gap-2">

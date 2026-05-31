@@ -26,9 +26,9 @@ const TYPE_LABELS: Record<ServiceType, string> = {
 };
 
 const TYPE_COLORS: Record<ServiceType, string> = {
-  hospital: '#D62828',
-  ambulance: '#D62828',
-  police: '#023E8A',
+  hospital: '#DC2626',
+  ambulance: '#DC2626',
+  police: '#06B6D4',
   towing: '#6B5B00',
   puncture: '#6B5B00',
 };
@@ -38,7 +38,7 @@ const TYPE_COLORS: Record<ServiceType, string> = {
 const userIcon = new Icon({
   iconUrl: `data:image/svg+xml;base64,${btoa(`
     <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 40 40" width="40" height="40">
-      <circle cx="20" cy="20" r="18" fill="#023E8A" stroke="white" stroke-width="3"/>
+      <circle cx="20" cy="20" r="18" fill="#4F46E5" stroke="white" stroke-width="3"/>
       <circle cx="20" cy="20" r="6" fill="white"/>
     </svg>
   `)}`,
@@ -242,10 +242,10 @@ export function TrackingScreen() {
   // ── Loading / error states ─────────────────────────────────────────────────
   if (!userLocation) {
     return (
-      <div className="min-h-screen bg-[#F5F5F5] flex flex-col items-center justify-center gap-3">
-        <Loader2 className="w-10 h-10 text-[#D62828] animate-spin" />
-        <p className="text-[#8888AA] text-sm">Waiting for GPS...</p>
-        <button onClick={() => navigate(-1)} className="mt-4 text-[#8888AA] text-sm underline">
+      <div className="min-h-screen bg-[#FAFBFC] flex flex-col items-center justify-center gap-3">
+        <Loader2 className="w-10 h-10 text-[#4F46E5] animate-spin" />
+        <p className="text-[#6B7280] text-sm">Waiting for GPS...</p>
+        <button onClick={() => navigate(-1)} className="mt-4 text-[#6B7280] text-sm underline">
           Go back
         </button>
       </div>
@@ -254,9 +254,9 @@ export function TrackingScreen() {
 
   if (!service) {
     return (
-      <div className="min-h-screen bg-[#F5F5F5] flex flex-col items-center justify-center gap-3">
-        <p className="text-[#8888AA]">Service not found</p>
-        <button onClick={() => navigate(-1)} className="text-[#D62828] font-semibold">Go back</button>
+      <div className="min-h-screen bg-[#FAFBFC] flex flex-col items-center justify-center gap-3">
+        <p className="text-[#6B7280]">Service not found</p>
+        <button onClick={() => navigate(-1)} className="text-[#4F46E5] font-semibold">Go back</button>
       </div>
     );
   }
@@ -271,18 +271,18 @@ export function TrackingScreen() {
   const { traveled, remaining } = splitRoute(route, progress);
 
   return (
-    <div className="h-screen bg-[#F5F5F5] flex flex-col relative overflow-hidden">
+    <div className="h-screen bg-[#FAFBFC] flex flex-col relative overflow-hidden">
       {/* Back button */}
       <button
         onClick={() => navigate(-1)}
         className="absolute top-4 left-4 z-20 w-10 h-10 bg-white/90 backdrop-blur shadow-md rounded-full flex items-center justify-center"
       >
-        <ArrowLeft className="w-5 h-5 text-[#1A1A2E]" />
+        <ArrowLeft className="w-5 h-5 text-[#111827]" />
       </button>
 
       {/* Arrived banner */}
       {arrived && (
-        <div className="absolute top-4 left-1/2 -translate-x-1/2 z-20 bg-[#06D6A0] text-white px-5 py-2 rounded-full text-sm font-bold shadow-lg">
+        <div className="absolute top-4 left-1/2 -translate-x-1/2 z-20 bg-[#10B981] text-white px-5 py-2 rounded-full text-sm font-bold shadow-lg">
           Vehicle Arrived!
         </div>
       )}
@@ -335,10 +335,10 @@ export function TrackingScreen() {
         {/* ETA row */}
         <div className="flex items-center justify-between mb-2">
           <div>
-            <p className="text-[#8888AA] text-xs font-medium tracking-wide">
+            <p className="text-[#6B7280] text-xs font-medium tracking-wide">
               {arrived ? 'STATUS' : 'ARRIVING IN'}
             </p>
-            <p className="text-[#1A1A2E] text-2xl font-bold leading-tight">
+            <p className="text-[#111827] text-2xl font-bold leading-tight">
               {arrived ? 'Arrived' : `${countdown ?? eta} mins`}
             </p>
           </div>
@@ -364,9 +364,9 @@ export function TrackingScreen() {
                 {label}
               </span>
             </div>
-            <p className="text-[#1A1A2E] font-semibold text-sm truncate">{service.name}</p>
+            <p className="text-[#111827] font-semibold text-sm truncate">{service.name}</p>
             {!arrived && (
-              <p className="text-[#8888AA] text-xs">{distance} km away</p>
+              <p className="text-[#6B7280] text-xs">{distance} km away</p>
             )}
           </div>
           <a

@@ -527,11 +527,11 @@ export const injuries: Injury[] = [
 export const getSeverityColor = (severity: SeverityLevel) => {
   switch (severity) {
     case 'critical':
-      return '#D62828';
+      return '#DC2626';
     case 'serious':
-      return '#FFB703';
+      return '#F59E0B';
     case 'moderate':
-      return '#06D6A0';
+      return '#10B981';
   }
 };
 

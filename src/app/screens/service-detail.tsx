@@ -41,12 +41,12 @@ export function ServiceDetailScreen() {
 
   if (!service) {
     return (
-      <div className="min-h-screen bg-[#0D0D0D] flex items-center justify-center">
+      <div className="min-h-screen bg-[#FAFBFC] flex items-center justify-center">
         <div className="text-center">
-          <p className="text-[#8888AA] mb-4">Service not found</p>
+          <p className="text-[#6B7280] mb-4">Service not found</p>
           <button
             onClick={() => navigate('/home')}
-            className="bg-[#D62828] text-white px-6 py-2 rounded-full"
+            className="bg-[#4F46E5] text-white px-6 py-2 rounded-full"
           >
             Back to Home
           </button>
@@ -84,13 +84,13 @@ export function ServiceDetailScreen() {
   const eta = etaMinutes(service.distance);
 
   const TYPE_COLOR: Record<string, string> = {
-    hospital: '#D62828',
-    ambulance: '#D62828',
-    police: '#023E8A',
+    hospital: '#DC2626',
+    ambulance: '#DC2626',
+    police: '#06B6D4',
     towing: '#6B5B00',
-    puncture: '#8888AA',
+    puncture: '#6B7280',
   };
-  const color = TYPE_COLOR[service.type] ?? '#8888AA';
+  const color = TYPE_COLOR[service.type] ?? '#6B7280';
 
   const TYPE_LABEL: Record<string, string> = {
     hospital: 'Hospital',
@@ -101,16 +101,16 @@ export function ServiceDetailScreen() {
   };
 
   return (
-    <div className="min-h-screen bg-[#0D0D0D] pb-20">
+    <div className="min-h-screen bg-[#FAFBFC] pb-20">
       {/* Header */}
-      <div className="bg-[#1A1A2E] px-4 py-3 flex items-center gap-3 border-b border-[#8888AA]/20 sticky top-0 z-10">
+      <div className="bg-[#FFFFFF] px-4 py-3 flex items-center gap-3 border-b border-[#E5E7EB] sticky top-0 z-10">
         <button
           onClick={() => navigate(-1)}
-          className="w-10 h-10 rounded-full bg-[#2A2A3E] flex items-center justify-center hover:bg-[#333344] transition-colors"
+          className="w-10 h-10 rounded-full bg-[#F3F4F6] flex items-center justify-center hover:bg-[#E5E7EB] transition-colors"
         >
-          <ArrowLeft className="w-5 h-5 text-[#F0F0F0]" />
+          <ArrowLeft className="w-5 h-5 text-[#111827]" />
         </button>
-        <span className="font-semibold text-[#F0F0F0]">Service Details</span>
+        <span className="font-semibold text-[#111827]">Service Details</span>
       </div>
 
       <div className="p-4 space-y-6">
@@ -126,24 +126,24 @@ export function ServiceDetailScreen() {
                   {TYPE_LABEL[service.type]?.toUpperCase()}
                 </span>
                 {service.verified && (
-                  <div className="flex items-center gap-1 bg-[#06D6A0]/20 text-[#06D6A0] px-2 py-0.5 rounded-full text-[10px] font-medium">
+                  <div className="flex items-center gap-1 bg-[#10B981]/20 text-[#10B981] px-2 py-0.5 rounded-full text-[10px] font-medium">
                     <CheckCircle className="w-3 h-3" />
                     Verified
                   </div>
                 )}
               </div>
-              <h1 className="text-2xl font-bold text-[#F0F0F0]">{service.name}</h1>
+              <h1 className="text-2xl font-bold text-[#111827]">{service.name}</h1>
             </div>
           </div>
 
           <div className="flex items-center gap-2 flex-wrap mb-4">
             {service.traumaLevel && (
-              <span className="px-3 py-1.5 rounded-full bg-[#D62828] text-white text-sm font-semibold">
+              <span className="px-3 py-1.5 rounded-full bg-[#DC2626] text-white text-sm font-semibold">
                 Trauma Level {service.traumaLevel}
               </span>
             )}
             {service.available24x7 && (
-              <span className="px-3 py-1.5 rounded-full bg-[#8888AA]/20 text-[#8888AA] text-sm font-medium flex items-center gap-1">
+              <span className="px-3 py-1.5 rounded-full bg-[#6B7280]/20 text-[#6B7280] text-sm font-medium flex items-center gap-1">
                 <Clock className="w-3 h-3" />
                 24/7
               </span>
@@ -151,58 +151,58 @@ export function ServiceDetailScreen() {
           </div>
 
           {service.distance > 0 && (
-            <div className="flex items-center gap-2 text-[#8888AA] mb-2">
+            <div className="flex items-center gap-2 text-[#6B7280] mb-2">
               <MapPin className="w-4 h-4" />
               <span className="text-sm">{service.distance} km away · ~{eta} min</span>
             </div>
           )}
 
           {service.address ? (
-            <p className="text-[#8888AA] text-sm">{service.address}</p>
+            <p className="text-[#6B7280] text-sm">{service.address}</p>
           ) : (
-            <p className="text-[#8888AA]/50 text-sm italic">Address not available</p>
+            <p className="text-[#6B7280]/50 text-sm italic">Address not available</p>
           )}
         </div>
 
         {/* Quick Stats — hospitals */}
         {service.type === 'hospital' && (
-          <div className="bg-[#1A1A2E] rounded-2xl p-4">
+          <div className="bg-[#FFFFFF] rounded-2xl p-4 border border-[#E5E7EB]">
             <div className="grid grid-cols-3 gap-4">
               <div className="text-center">
-                <div className="w-12 h-12 bg-[#D62828]/20 rounded-full flex items-center justify-center mx-auto mb-2">
-                  <Bed className="w-6 h-6 text-[#D62828]" />
+                <div className="w-12 h-12 bg-[#DC2626]/10 rounded-full flex items-center justify-center mx-auto mb-2">
+                  <Bed className="w-6 h-6 text-[#DC2626]" />
                 </div>
-                <p className="text-xs text-[#8888AA] mb-1">Beds</p>
-                <p className="font-semibold text-[#F0F0F0]">{service.beds ?? '—'}</p>
+                <p className="text-xs text-[#6B7280] mb-1">Beds</p>
+                <p className="font-semibold text-[#111827]">{service.beds ?? '—'}</p>
               </div>
               <div className="text-center">
-                <div className="w-12 h-12 bg-[#D62828]/20 rounded-full flex items-center justify-center mx-auto mb-2">
-                  <Building2 className="w-6 h-6 text-[#D62828]" />
+                <div className="w-12 h-12 bg-[#DC2626]/10 rounded-full flex items-center justify-center mx-auto mb-2">
+                  <Building2 className="w-6 h-6 text-[#DC2626]" />
                 </div>
-                <p className="text-xs text-[#8888AA] mb-1">Emergency</p>
-                <p className="font-semibold text-[#F0F0F0]">Active</p>
+                <p className="text-xs text-[#6B7280] mb-1">Emergency</p>
+                <p className="font-semibold text-[#111827]">Active</p>
               </div>
               <div className="text-center">
-                <div className="w-12 h-12 bg-[#06D6A0]/20 rounded-full flex items-center justify-center mx-auto mb-2">
-                  <Clock className="w-6 h-6 text-[#06D6A0]" />
+                <div className="w-12 h-12 bg-[#10B981]/20 rounded-full flex items-center justify-center mx-auto mb-2">
+                  <Clock className="w-6 h-6 text-[#10B981]" />
                 </div>
-                <p className="text-xs text-[#8888AA] mb-1">Available</p>
-                <p className="font-semibold text-[#F0F0F0]">{service.available24x7 ? '24/7' : 'Limited'}</p>
+                <p className="text-xs text-[#6B7280] mb-1">Available</p>
+                <p className="font-semibold text-[#111827]">{service.available24x7 ? '24/7' : 'Limited'}</p>
               </div>
             </div>
           </div>
         )}
 
         {/* Contact */}
-        <div className="bg-[#1A1A2E] rounded-2xl p-4">
-          <h3 className="font-semibold text-[#F0F0F0] mb-3 flex items-center gap-2">
+        <div className="bg-[#FFFFFF] rounded-2xl p-4 border border-[#E5E7EB]">
+          <h3 className="font-semibold text-[#111827] mb-3 flex items-center gap-2">
             <Phone className="w-4 h-4" />
             Contact
           </h3>
-          <p className="text-[#8888AA] text-sm mb-4">{service.phone}</p>
+          <p className="text-[#6B7280] text-sm mb-4">{service.phone}</p>
           <button
             onClick={handleCall}
-            className="w-full bg-[#D62828] hover:bg-[#B81F1F] text-white px-6 py-4 rounded-full font-semibold flex items-center justify-center gap-2 transition-colors active:scale-95 text-lg"
+            className="w-full bg-[#DC2626] hover:bg-[#B91C1C] text-white px-6 py-4 rounded-full font-semibold flex items-center justify-center gap-2 transition-colors active:scale-95 text-lg"
           >
             <Phone className="w-5 h-5" />
             Call Now
@@ -211,17 +211,17 @@ export function ServiceDetailScreen() {
 
         {/* Call Ambulance — for hospitals/police (request an ambulance to this location) */}
         {(service.type === 'hospital' || service.type === 'police') && (
-          <div className="bg-[#1A1A2E] rounded-2xl p-4">
-            <h3 className="font-semibold text-[#F0F0F0] mb-3 flex items-center gap-2">
-              <Ambulance className="w-4 h-4 text-[#D62828]" />
+          <div className="bg-[#FFFFFF] rounded-2xl p-4 border border-[#E5E7EB]">
+            <h3 className="font-semibold text-[#111827] mb-3 flex items-center gap-2">
+              <Ambulance className="w-4 h-4 text-[#DC2626]" />
               Need an Ambulance?
             </h3>
-            <p className="text-[#8888AA] text-sm mb-4">
+            <p className="text-[#6B7280] text-sm mb-4">
               Call 108 for a free government ambulance to your location.
             </p>
             <a
               href="tel:108"
-              className="w-full bg-[#D62828]/10 border border-[#D62828]/30 text-[#D62828] px-6 py-3 rounded-full font-semibold flex items-center justify-center gap-2 transition-colors active:scale-95"
+              className="w-full bg-[#DC2626]/10 border border-[#DC2626]/30 text-[#DC2626] px-6 py-3 rounded-full font-semibold flex items-center justify-center gap-2 transition-colors active:scale-95"
             >
               <Phone className="w-4 h-4" />
               Dial 108 — Ambulance
@@ -234,7 +234,7 @@ export function ServiceDetailScreen() {
           <button
             onClick={handleNavigate}
             disabled={!isOnline}
-            className="w-full border-2 border-[#023E8A] text-[#023E8A] hover:bg-[#023E8A]/10 disabled:border-[#8888AA]/30 disabled:text-[#8888AA] disabled:cursor-not-allowed px-6 py-4 rounded-full font-semibold flex items-center justify-center gap-2 transition-colors active:scale-95"
+            className="w-full border-2 border-[#06B6D4] text-[#06B6D4] hover:bg-[#06B6D4]/10 disabled:border-[#E5E7EB] disabled:text-[#9CA3AF] disabled:cursor-not-allowed px-6 py-4 rounded-full font-semibold flex items-center justify-center gap-2 transition-colors active:scale-95"
           >
             <Navigation className="w-5 h-5" />
             {isOnline ? 'Open in Maps' : 'Maps unavailable offline'}
@@ -243,7 +243,7 @@ export function ServiceDetailScreen() {
           {service.distance > 0 && (
             <button
               onClick={() => navigate(`/tracking/${service.id}`, { state: { userLocation, liveServices: [service] } })}
-              className="w-full border-2 border-[#FFB703] text-[#FFB703] hover:bg-[#FFB703]/10 px-6 py-4 rounded-full font-semibold flex items-center justify-center gap-2 transition-colors active:scale-95"
+              className="w-full border-2 border-[#F59E0B] text-[#F59E0B] hover:bg-[#F59E0B]/10 px-6 py-4 rounded-full font-semibold flex items-center justify-center gap-2 transition-colors active:scale-95"
             >
               <Locate className="w-5 h-5" />
               Track Vehicle
@@ -252,7 +252,7 @@ export function ServiceDetailScreen() {
 
           <button
             onClick={handleShare}
-            className="w-full border-2 border-[#8888AA]/30 text-[#F0F0F0] hover:bg-[#8888AA]/10 px-6 py-4 rounded-full font-semibold flex items-center justify-center gap-2 transition-colors active:scale-95"
+            className="w-full border-2 border-[#E5E7EB] text-[#111827] hover:bg-[#F3F4F6] px-6 py-4 rounded-full font-semibold flex items-center justify-center gap-2 transition-colors active:scale-95"
           >
             <Share2 className="w-5 h-5" />
             Share Location
@@ -260,7 +260,7 @@ export function ServiceDetailScreen() {
         </div>
 
         {/* Report */}
-        <button className="w-full text-[#8888AA] text-sm hover:text-[#F0F0F0] transition-colors flex items-center justify-center gap-2 py-2">
+        <button className="w-full text-[#6B7280] text-sm hover:text-[#111827] transition-colors flex items-center justify-center gap-2 py-2">
           <Flag className="w-4 h-4" />
           Report outdated info
         </button>

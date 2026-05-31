@@ -119,18 +119,18 @@ export function SearchScreen() {
   const isLive = liveServices !== null;
 
   return (
-    <div className="min-h-screen bg-[#0D0D0D] pb-20">
+    <div className="min-h-screen bg-[#FAFBFC] pb-20">
       {/* Sticky header */}
-      <div className="bg-[#1A1A2E] px-4 py-4 border-b border-[#8888AA]/20 sticky top-0 z-10">
+      <div className="bg-[#FFFFFF] px-4 py-4 border-b border-[#E5E7EB] sticky top-0 z-10">
         <div className="flex items-center justify-between mb-3">
-          <h1 className="font-bold text-[#F0F0F0] text-lg">Search Services</h1>
+          <h1 className="font-bold text-[#111827] text-lg">Search Services</h1>
           {/* Data source badge */}
           <div className={`flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[10px] font-semibold ${
             loading
-              ? 'bg-[#8888AA]/20 text-[#8888AA]'
+              ? 'bg-[#6B7280]/20 text-[#6B7280]'
               : isLive
-              ? 'bg-[#06D6A0]/20 text-[#06D6A0]'
-              : 'bg-[#FFB703]/20 text-[#FFB703]'
+              ? 'bg-[#10B981]/20 text-[#10B981]'
+              : 'bg-[#F59E0B]/20 text-[#F59E0B]'
           }`}>
             {loading
               ? <Loader2 className="w-3 h-3 animate-spin" />
@@ -140,18 +140,18 @@ export function SearchScreen() {
         </div>
 
         {/* Search input */}
-        <div className="bg-[#0D0D0D] rounded-2xl px-4 py-3 flex items-center gap-2 mb-3">
-          <SearchIcon className="w-5 h-5 text-[#8888AA] shrink-0" />
+        <div className="bg-[#F3F4F6] rounded-2xl px-4 py-3 flex items-center gap-2 mb-3">
+          <SearchIcon className="w-5 h-5 text-[#6B7280] shrink-0" />
           <input
             type="text"
             value={query}
             onChange={e => setQuery(e.target.value)}
             placeholder="Search hospitals, police stations…"
-            className="flex-1 bg-transparent text-[#F0F0F0] placeholder:text-[#8888AA] outline-none"
+            className="flex-1 bg-transparent text-[#111827] placeholder:text-[#9CA3AF] outline-none"
             autoFocus
           />
           {query && (
-            <button onClick={() => setQuery('')} className="text-[#8888AA] hover:text-[#F0F0F0] transition-colors">
+            <button onClick={() => setQuery('')} className="text-[#6B7280] hover:text-[#111827] transition-colors">
               <X className="w-5 h-5" />
             </button>
           )}
@@ -165,8 +165,8 @@ export function SearchScreen() {
               onClick={() => setTypeFilter(f.value)}
               className={`px-3 py-1.5 rounded-full text-xs font-semibold whitespace-nowrap transition-colors ${
                 typeFilter === f.value
-                  ? 'bg-[#D62828] text-white'
-                  : 'bg-[#0D0D0D] text-[#8888AA] hover:text-[#F0F0F0]'
+                  ? 'bg-[#4F46E5] text-white'
+                  : 'bg-[#F3F4F6] text-[#6B7280] hover:text-[#111827]'
               }`}
             >
               {f.label}
@@ -179,15 +179,15 @@ export function SearchScreen() {
       <div className="p-4">
         {loading ? (
           <div className="text-center py-12">
-            <Loader2 className="w-10 h-10 text-[#D62828] animate-spin mx-auto mb-4" />
-            <p className="text-[#8888AA] text-sm">Finding services near you…</p>
+            <Loader2 className="w-10 h-10 text-[#4F46E5] animate-spin mx-auto mb-4" />
+            <p className="text-[#6B7280] text-sm">Finding services near you…</p>
           </div>
 
         ) : query === '' && typeFilter === 'all' ? (
           <div>
             {allServices.length > 0 && (
               <>
-                <p className="text-xs text-[#8888AA] mb-4 font-medium tracking-wide">
+                <p className="text-xs text-[#6B7280] mb-4 font-medium tracking-wide">
                   {allServices.length} SERVICES NEAR YOU
                 </p>
                 <div className="space-y-3">
@@ -201,7 +201,7 @@ export function SearchScreen() {
                     />
                   ))}
                   {allServices.length > 10 && (
-                    <p className="text-center text-xs text-[#8888AA] pt-2">
+                    <p className="text-center text-xs text-[#6B7280] pt-2">
                       Search to see all {allServices.length} services
                     </p>
                   )}
@@ -210,23 +210,23 @@ export function SearchScreen() {
             )}
             {allServices.length === 0 && (
               <div className="text-center py-12">
-                <SearchIcon className="w-16 h-16 text-[#8888AA]/30 mx-auto mb-4" />
-                <h3 className="text-[#F0F0F0] font-semibold mb-2">Search for services</h3>
-                <p className="text-[#8888AA] text-sm">Find hospitals, police stations, ambulances and more</p>
+                <SearchIcon className="w-16 h-16 text-[#6B7280]/30 mx-auto mb-4" />
+                <h3 className="text-[#111827] font-semibold mb-2">Search for services</h3>
+                <p className="text-[#6B7280] text-sm">Find hospitals, police stations, ambulances and more</p>
               </div>
             )}
           </div>
 
         ) : results.length === 0 ? (
           <div className="text-center py-12">
-            <SearchIcon className="w-16 h-16 text-[#8888AA]/30 mx-auto mb-4" />
-            <h3 className="text-[#F0F0F0] font-semibold mb-2">No results found</h3>
-            <p className="text-[#8888AA] text-sm">Try a different search term or filter</p>
+            <SearchIcon className="w-16 h-16 text-[#6B7280]/30 mx-auto mb-4" />
+            <h3 className="text-[#111827] font-semibold mb-2">No results found</h3>
+            <p className="text-[#6B7280] text-sm">Try a different search term or filter</p>
           </div>
 
         ) : (
           <div className="space-y-3">
-            <p className="text-sm text-[#8888AA] mb-4">
+            <p className="text-sm text-[#6B7280] mb-4">
               {results.length} {results.length === 1 ? 'result' : 'results'} found
             </p>
             {results.map(service => (

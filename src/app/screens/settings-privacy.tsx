@@ -53,39 +53,39 @@ export function SettingsPrivacyScreen() {
   const navigate = useNavigate();
 
   return (
-    <div className="min-h-screen bg-[#0D0D0D] pb-20">
-      <div className="bg-[#1A1A2E] px-4 py-3 flex items-center gap-3 border-b border-[#8888AA]/20 sticky top-0 z-10">
+    <div className="min-h-screen bg-[#FAFBFC] pb-20">
+      <div className="bg-[#FFFFFF] px-4 py-3 flex items-center gap-3 border-b border-[#E5E7EB] sticky top-0 z-10">
         <button
           onClick={() => navigate('/settings')}
-          className="w-10 h-10 rounded-full bg-[#2A2A3E] flex items-center justify-center hover:bg-[#333344] transition-colors"
+          className="w-10 h-10 rounded-full bg-[#F3F4F6] flex items-center justify-center hover:bg-[#E5E7EB] transition-colors"
         >
-          <ArrowLeft className="w-5 h-5 text-[#F0F0F0]" />
+          <ArrowLeft className="w-5 h-5 text-[#111827]" />
         </button>
-        <span className="font-semibold text-[#F0F0F0]">Privacy Policy</span>
+        <span className="font-semibold text-[#111827]">Privacy Policy</span>
       </div>
 
       <div className="p-4 space-y-5">
         {/* Header */}
-        <div className="bg-[#1A1A2E] rounded-2xl p-5">
+        <div className="bg-[#FFFFFF] rounded-2xl p-5 border border-[#E5E7EB]">
           <div className="flex items-center gap-3 mb-3">
-            <div className="w-10 h-10 bg-[#06D6A0]/20 rounded-full flex items-center justify-center">
-              <Shield className="w-5 h-5 text-[#06D6A0]" />
+            <div className="w-10 h-10 bg-[#10B981]/20 rounded-full flex items-center justify-center">
+              <Shield className="w-5 h-5 text-[#10B981]" />
             </div>
             <div>
-              <p className="font-semibold text-[#F0F0F0]">Your Privacy Matters</p>
-              <p className="text-xs text-[#8888AA]">Last updated: April 2026</p>
+              <p className="font-semibold text-[#111827]">Your Privacy Matters</p>
+              <p className="text-xs text-[#6B7280]">Last updated: April 2026</p>
             </div>
           </div>
-          <p className="text-sm text-[#8888AA] leading-relaxed">
+          <p className="text-sm text-[#6B7280] leading-relaxed">
             RoadSoS is designed with privacy at its core. No accounts, no tracking, no personal data collection. Everything stays on your device.
           </p>
         </div>
 
         {/* Policy Sections */}
         {sections.map((section, i) => (
-          <div key={i} className="bg-[#1A1A2E] rounded-2xl p-5">
-            <h3 className="font-semibold text-[#F0F0F0] mb-2">{section.title}</h3>
-            <p className="text-sm text-[#8888AA] leading-relaxed whitespace-pre-line">{section.content}</p>
+          <div key={i} className="bg-[#FFFFFF] rounded-2xl p-5 border border-[#E5E7EB]">
+            <h3 className="font-semibold text-[#111827] mb-2">{section.title}</h3>
+            <p className="text-sm text-[#6B7280] leading-relaxed whitespace-pre-line">{section.content}</p>
           </div>
         ))}
       </div>

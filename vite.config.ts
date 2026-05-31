@@ -43,8 +43,8 @@ export default defineConfig({
         name: 'RoadSoS',
         short_name: 'RoadSoS',
         description: 'Emergency services locator for road accident victims.',
-        theme_color: '#D62828',
-        background_color: '#0D0D0D',
+        theme_color: '#4F46E5',
+        background_color: '#FAFBFC',
         display: 'standalone',
         start_url: '/',
         scope: '/',
@@ -72,6 +72,15 @@ export default defineConfig({
       },
     }),
   ],
+  server: {
+    proxy: {
+      '/api/overpass': {
+        target: 'https://overpass-api.de',
+        changeOrigin: true,
+        rewrite: () => '/api/interpreter',
+      },
+    },
+  },
   resolve: {
     alias: {
       // Alias @ to the src directory

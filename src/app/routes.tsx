@@ -69,10 +69,10 @@ export const router = createBrowserRouter([
   {
     path: '*',
     Component: () => (
-      <div className="min-h-screen bg-[#0D0D0D] flex items-center justify-center">
+      <div className="min-h-screen bg-[#FAFBFC] flex items-center justify-center">
         <div className="text-center">
-          <h1 className="text-2xl font-bold text-[#F0F0F0] mb-2">404</h1>
-          <p className="text-[#8888AA]">Page not found</p>
+          <h1 className="text-2xl font-bold text-[#111827] mb-2">404</h1>
+          <p className="text-[#6B7280]">Page not found</p>
         </div>
       </div>
     )

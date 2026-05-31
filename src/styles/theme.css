@@ -1,55 +1,115 @@
 @custom-variant dark (&:is(.dark *));
 
 :root {
-  /* RoadSoS Design System */
-  --emergency-red: #D62828;
-  --trust-blue: #023E8A;
-  --bg-dark: #0D0D0D;
-  --surface-card: #1A1A2E;
-  --accent-green: #06D6A0;
-  --warning-yellow: #FFB703;
-  --text-primary: #F0F0F0;
-  --text-muted: #8888AA;
-  
+  /* ── RoadSoS Design System — Light SaaS Theme ─────────────────────────── */
+
+  /* Brand colors */
+  --indigo-50:  #EEF2FF;
+  --indigo-100: #E0E7FF;
+  --indigo-200: #C7D2FE;
+  --indigo-300: #A5B4FC;
+  --indigo-400: #818CF8;
+  --indigo-500: #6366F1;
+  --indigo-600: #4F46E5;
+  --indigo-700: #4338CA;
+  --indigo-800: #3730A3;
+
+  --cyan-50:  #ECFEFF;
+  --cyan-100: #CFFAFE;
+  --cyan-400: #22D3EE;
+  --cyan-500: #06B6D4;
+  --cyan-600: #0891B2;
+  --cyan-700: #0E7490;
+
+  --amber-50:  #FFFBEB;
+  --amber-100: #FEF3C7;
+  --amber-400: #FBBF24;
+  --amber-500: #F59E0B;
+  --amber-600: #D97706;
+
+  /* Semantic emergency signals */
+  --danger-50:  #FEF2F2;
+  --danger-100: #FEE2E2;
+  --danger-500: #EF4444;
+  --danger-600: #DC2626;
+  --danger-700: #B91C1C;
+
+  --success-50:  #ECFDF5;
+  --success-100: #D1FAE5;
+  --success-500: #10B981;
+  --success-600: #059669;
+
+  --warning-500: var(--amber-500);
+
+  /* Service category colors */
+  --svc-ambulance: #DC2626;
+  --svc-hospital:  #DC2626;
+  --svc-police:    #4F46E5;
+  --svc-fire:      #EA580C;
+  --svc-towing:    #F59E0B;
+  --svc-puncture:  #6B7280;
+
+  /* Gradients */
+  --grad-primary: linear-gradient(135deg, #6366F1 0%, #4F46E5 100%);
+  --grad-hero:    linear-gradient(135deg, #4F46E5 0%, #06B6D4 100%);
+  --grad-sos:     linear-gradient(135deg, #EF4444 0%, #DC2626 100%);
+
   /* Tailwind theme tokens */
   --font-size: 16px;
-  --background: #0D0D0D;
-  --foreground: #F0F0F0;
-  --card: #1A1A2E;
-  --card-foreground: #F0F0F0;
-  --popover: #1A1A2E;
-  --popover-foreground: #F0F0F0;
-  --primary: #D62828;
-  --primary-foreground: #F0F0F0;
-  --secondary: #023E8A;
-  --secondary-foreground: #F0F0F0;
-  --muted: #2A2A3E;
-  --muted-foreground: #8888AA;
-  --accent: #06D6A0;
-  --accent-foreground: #0D0D0D;
-  --destructive: #D62828;
-  --destructive-foreground: #F0F0F0;
-  --border: rgba(136, 136, 170, 0.2);
-  --input: rgba(136, 136, 170, 0.2);
-  --input-background: #1A1A2E;
-  --switch-background: #2A2A3E;
+  --background: #FAFBFC;
+  --foreground: #111827;
+  --card: #FFFFFF;
+  --card-foreground: #111827;
+  --popover: #FFFFFF;
+  --popover-foreground: #111827;
+  --primary: #4F46E5;
+  --primary-foreground: #FFFFFF;
+  --secondary: #06B6D4;
+  --secondary-foreground: #FFFFFF;
+  --muted: #F3F4F6;
+  --muted-foreground: #6B7280;
+  --accent: #F59E0B;
+  --accent-foreground: #111827;
+  --destructive: #DC2626;
+  --destructive-foreground: #FFFFFF;
+  --border: #E5E7EB;
+  --border-strong: #D1D5DB;
+  --input: #E5E7EB;
+  --input-background: #FFFFFF;
+  --switch-background: #E5E7EB;
   --font-weight-medium: 500;
   --font-weight-normal: 400;
-  --ring: #D62828;
-  --chart-1: #D62828;
-  --chart-2: #023E8A;
-  --chart-3: #06D6A0;
-  --chart-4: #FFB703;
-  --chart-5: #F0F0F0;
+  --ring: #4F46E5;
+  --chart-1: #4F46E5;
+  --chart-2: #06B6D4;
+  --chart-3: #10B981;
+  --chart-4: #F59E0B;
+  --chart-5: #DC2626;
   --radius: 1rem;
-  --sidebar: #1A1A2E;
-  --sidebar-foreground: #F0F0F0;
-  --sidebar-primary: #D62828;
-  --sidebar-primary-foreground: #F0F0F0;
-  --sidebar-accent: #2A2A3E;
-  --sidebar-accent-foreground: #F0F0F0;
-  --sidebar-border: rgba(136, 136, 170, 0.2);
-  --sidebar-ring: #D62828;
+  --sidebar: #FFFFFF;
+  --sidebar-foreground: #111827;
+  --sidebar-primary: #4F46E5;
+  --sidebar-primary-foreground: #FFFFFF;
+  --sidebar-accent: #F3F4F6;
+  --sidebar-accent-foreground: #111827;
+  --sidebar-border: #E5E7EB;
+  --sidebar-ring: #4F46E5;
+
+  /* Shadows */
+  --shadow-xs: 0 1px 2px rgba(17, 24, 39, 0.05);
+  --shadow-sm: 0 1px 3px rgba(17, 24, 39, 0.08), 0 1px 2px rgba(17, 24, 39, 0.04);
+  --shadow-md: 0 4px 12px rgba(17, 24, 39, 0.08), 0 2px 4px rgba(17, 24, 39, 0.04);
+  --shadow-lg: 0 12px 28px rgba(17, 24, 39, 0.10), 0 4px 8px rgba(17, 24, 39, 0.04);
+  --shadow-xl: 0 24px 48px rgba(17, 24, 39, 0.14);
+  --shadow-indigo: 0 10px 24px rgba(79, 70, 229, 0.28);
+  --shadow-sos:    0 10px 24px rgba(220, 38, 38, 0.32);
+
+  /* Motion */
+  --ease: cubic-bezier(0.4, 0, 0.2, 1);
+  --ease-out: cubic-bezier(0.16, 1, 0.3, 1);
+  --dur-fast: 150ms;
+  --dur: 220ms;
+  --dur-slow: 360ms;
 }
 
 @theme inline {
@@ -79,10 +139,11 @@
   --color-chart-3: var(--chart-3);
   --color-chart-4: var(--chart-4);
   --color-chart-5: var(--chart-5);
-  --color-emergency-red: var(--emergency-red);
-  --color-trust-blue: var(--trust-blue);
-  --color-accent-green: var(--accent-green);
-  --color-warning-yellow: var(--warning-yellow);
+  --color-indigo-600: var(--indigo-600);
+  --color-cyan-500: var(--cyan-500);
+  --color-amber-500: var(--amber-500);
+  --color-danger-600: var(--danger-600);
+  --color-success-500: var(--success-500);
   --radius-sm: calc(var(--radius) - 4px);
   --radius-md: calc(var(--radius) - 2px);
   --radius-lg: var(--radius);
@@ -104,11 +165,13 @@
 
   body {
     @apply bg-background text-foreground;
-    font-family: 'DM Sans', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+    font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+    -webkit-font-smoothing: antialiased;
+    text-rendering: optimizeLegibility;
   }
 
   h1, h2, h3, h4, h5, h6 {
-    font-family: 'Syne', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+    font-family: 'Poppins', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
   }
 
   html {
@@ -119,18 +182,21 @@
     font-size: 2rem;
     font-weight: 700;
     line-height: 1.2;
+    letter-spacing: -0.02em;
   }
 
   h2 {
     font-size: 1.5rem;
     font-weight: 600;
     line-height: 1.3;
+    letter-spacing: -0.015em;
   }
 
   h3 {
     font-size: 1.25rem;
     font-weight: 600;
     line-height: 1.4;
+    letter-spacing: -0.01em;
   }
 
   h4 {
@@ -158,20 +224,21 @@
   }
 }
 
-/* Leaflet map styles */
+/* Leaflet map styles — light theme */
 .leaflet-container {
-  background: #0D0D0D;
-  font-family: 'DM Sans', sans-serif;
+  background: #EBEEF3;
+  font-family: 'Inter', sans-serif;
 }
 
 .leaflet-popup-content-wrapper {
-  background: #1A1A2E;
-  color: #F0F0F0;
+  background: #FFFFFF;
+  color: #111827;
   border-radius: 1rem;
+  box-shadow: 0 4px 12px rgba(17, 24, 39, 0.10);
 }
 
 .leaflet-popup-tip {
-  background: #1A1A2E;
+  background: #FFFFFF;
 }
 
 /* Utility classes */
@@ -194,17 +261,17 @@
 }
 
 .service-list-scroll::-webkit-scrollbar-thumb {
-  background: rgba(136, 136, 170, 0.3);
+  background: #D1D5DB;
   border-radius: 3px;
 }
 
 .service-list-scroll::-webkit-scrollbar-thumb:hover {
-  background: rgba(136, 136, 170, 0.5);
+  background: #9CA3AF;
 }
 
 /* Smooth scrolling */
 .service-list-scroll {
   scrollbar-width: thin;
-  scrollbar-color: rgba(136, 136, 170, 0.3) transparent;
+  scrollbar-color: #D1D5DB transparent;
   scroll-behavior: smooth;
 }

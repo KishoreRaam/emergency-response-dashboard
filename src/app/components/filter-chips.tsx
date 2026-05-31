@@ -28,8 +28,8 @@ export function FilterChips({ active, onFilter }: FilterChipsProps) {
             onClick={() => onFilter(filter.value)}
             className={`px-4 py-2.5 rounded-full whitespace-nowrap text-sm font-medium transition-all flex items-center gap-2 ${
               isActive
-                ? 'bg-[#D62828] text-white shadow-lg'
-                : 'bg-[#1A1A2E] text-[#8888AA] hover:bg-[#222233] hover:text-[#F0F0F0]'
+                ? 'bg-[#4F46E5] text-white shadow-sm'
+                : 'bg-[#F3F4F6] text-[#6B7280] hover:bg-[#E5E7EB] hover:text-[#111827]'
             }`}
           >
             {Icon && <Icon className="w-4 h-4" />}
