@@ -17,17 +17,7 @@ export default defineConfig({
       workbox: {
         // Don't intercept API calls or external tile requests
         navigateFallbackDenylist: [/^\/api/, /^https?:\/\//],
-        // Cache Overpass API responses for offline use
         runtimeCaching: [
-          {
-            urlPattern: /\/api\/overpass/,
-            handler: 'NetworkFirst',
-            options: {
-              cacheName: 'overpass-api',
-              expiration: { maxEntries: 10, maxAgeSeconds: 7200 },
-              networkTimeoutSeconds: 8,
-            },
-          },
           {
             // Cache map tiles for offline use
             urlPattern: /arcgisonline\.com|tile\.openstreetmap\.org/,
