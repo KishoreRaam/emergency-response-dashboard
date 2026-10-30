@@ -12,7 +12,7 @@ import { BottomNav } from '../components/bottom-nav';
 import { haversineDistance, etaMinutes } from '../utils/distance';
 import { useNavigate, useSearchParams } from 'react-router';
 import { SosButton } from '../components/sos-button';
-import { fetchNearbyServices, getCachedServices } from '../services/overpass';
+import { fetchNearbyServices, getCachedServices, getStaleCachedServices } from '../services/overpass';
 
 // ─── Constants ────────────────────────────────────────────────────────────────
 
@@ -253,7 +253,15 @@ export function HomeScreen() {
         setOverpassFailed(false);
       })
       .catch(() => {
-        // All endpoints failed — static data + nationals still show
+        // All endpoints failed — prefer an older cached result for this area
+        const stale = getStaleCachedServices(lat, lng);
+        if (stale) {
+          setLiveServices(stale);
+          setUsingCache(true);
+          setOverpassFailed(false);
+          return;
+        }
+        // Otherwise static data + nationals still show
         setLiveServices(null);
         setOverpassFailed(true);
       })

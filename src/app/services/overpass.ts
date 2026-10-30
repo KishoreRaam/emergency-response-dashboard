@@ -6,7 +6,15 @@ import { haversineDistance } from '../utils/distance';
 const CACHE_KEY = 'roadsos_services_cache';
 const CACHE_MAX_AGE_MS = 2 * 60 * 60 * 1000; // 2 hours
 const CACHE_VALID_RADIUS_KM = 5;
-const OVERPASS_TIMEOUT_MS = 15_000; // 15 s total (all endpoints race in parallel)
+const OVERPASS_TIMEOUT_MS = 45_000; // public servers can take 30-40 s under load
+const STALE_CACHE_RADIUS_KM = 25;
+
+// Queried directly from the browser, in parallel with our /api/overpass proxy
+const DIRECT_ENDPOINTS = [
+  'https://overpass-api.de/api/interpreter',
+  'https://lz4.overpass-api.de/api/interpreter',
+  'https://z.overpass-api.de/api/interpreter',
+];
 
 // OSM amenity → our ServiceType
 const AMENITY_TYPE_MAP: Record<string, ServiceType> = {
@@ -124,6 +132,22 @@ export function getCachedServices(
   return null;
 }
 
+/**
+ * Last-resort cache: any previous result near this location, regardless of age.
+ * Distances are recomputed from the current position.
+ */
+export function getStaleCachedServices(
+  userLat: number,
+  userLng: number
+): EmergencyService[] | null {
+  const cache = loadCache();
+  if (!cache) return null;
+  if (haversineDistance(userLat, userLng, cache.lat, cache.lng) > STALE_CACHE_RADIUS_KM) return null;
+  return cache.services
+    .map(s => ({ ...s, distance: haversineDistance(userLat, userLng, s.location.lat, s.location.lng) }))
+    .sort((a, b) => a.distance - b.distance);
+}
+
 // ─── Parsing helpers ───────────────────────────────────────────────────────────
 
 function extractPhone(tags: OsmTags, type: ServiceType): string {
@@ -233,22 +257,31 @@ async function queryOverpass(
   const controller = new AbortController();
   const timer = setTimeout(() => controller.abort(), OVERPASS_TIMEOUT_MS);
 
-  try {
-    const res = await fetch('/api/overpass', {
+  // Race our proxy against direct browser requests to the public mirrors.
+  // Overpass allows CORS, so direct calls work even when the proxy is down.
+  const attempt = async (url: string): Promise<OsmElement[]> => {
+    const res = await fetch(url, {
       method: 'POST',
       headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
       body,
       signal: controller.signal,
     });
-    clearTimeout(timer);
-    if (!res.ok) throw new Error(`Proxy returned ${res.status}`);
+    if (!res.ok) throw new Error(`${url} returned ${res.status}`);
     const json: OverpassResponse = await res.json();
-    console.info(`[Overpass] Success — ${json.elements.length} elements`);
+    if (!Array.isArray(json.elements)) throw new Error(`${url} returned no elements`);
     return json.elements;
-  } catch (err) {
+  };
+
+  try {
+    const elements = await Promise.any(['/api/overpass', ...DIRECT_ENDPOINTS].map(attempt));
+    console.info(`[Overpass] Success — ${elements.length} elements`);
+    return elements;
+  } catch {
+    console.info('[Overpass] Live data unavailable — using fallback');
+    throw new Error('Overpass unavailable');
+  } finally {
     clearTimeout(timer);
-    console.warn('[Overpass] Proxy request failed:', err);
-    throw new Error('Overpass proxy failed');
+    controller.abort(); // cancel the slower in-flight requests
   }
 }
 
