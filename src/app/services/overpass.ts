@@ -9,13 +9,6 @@ const CACHE_VALID_RADIUS_KM = 5;
 const OVERPASS_TIMEOUT_MS = 45_000; // public servers can take 30-40 s under load
 const STALE_CACHE_RADIUS_KM = 25;
 
-// Queried directly from the browser, in parallel with our /api/overpass proxy
-const DIRECT_ENDPOINTS = [
-  'https://overpass-api.de/api/interpreter',
-  'https://lz4.overpass-api.de/api/interpreter',
-  'https://z.overpass-api.de/api/interpreter',
-];
-
 // OSM amenity → our ServiceType
 const AMENITY_TYPE_MAP: Record<string, ServiceType> = {
   hospital: 'hospital',
@@ -257,32 +250,93 @@ async function queryOverpass(
   const controller = new AbortController();
   const timer = setTimeout(() => controller.abort(), OVERPASS_TIMEOUT_MS);
 
-  // Race our proxy against direct browser requests to the public mirrors.
-  // Overpass allows CORS, so direct calls work even when the proxy is down.
-  const attempt = async (url: string): Promise<OsmElement[]> => {
-    const res = await fetch(url, {
+  try {
+    // Nominatim is fast and reliable; the Overpass proxy is the backup
+    try {
+      const elements = await queryNominatim(lat, lng, radiusMeters, controller.signal);
+      console.info(`[Nominatim] Success — ${elements.length} elements`);
+      return elements;
+    } catch {
+      // fall through to Overpass proxy
+    }
+
+    const res = await fetch('/api/overpass', {
       method: 'POST',
       headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
       body,
       signal: controller.signal,
     });
-    if (!res.ok) throw new Error(`${url} returned ${res.status}`);
+    if (!res.ok) throw new Error(`Proxy returned ${res.status}`);
     const json: OverpassResponse = await res.json();
-    if (!Array.isArray(json.elements)) throw new Error(`${url} returned no elements`);
+    if (!Array.isArray(json.elements)) throw new Error('Proxy returned no elements');
+    console.info(`[Overpass] Success — ${json.elements.length} elements`);
     return json.elements;
-  };
-
-  try {
-    const elements = await Promise.any(['/api/overpass', ...DIRECT_ENDPOINTS].map(attempt));
-    console.info(`[Overpass] Success — ${elements.length} elements`);
-    return elements;
   } catch {
     console.info('[Overpass] Live data unavailable — using fallback');
-    throw new Error('Overpass unavailable');
+    throw new Error('Live data unavailable');
   } finally {
     clearTimeout(timer);
-    controller.abort(); // cancel the slower in-flight requests
   }
+}
+
+// ─── Nominatim fetch ───────────────────────────────────────────────────────────
+
+const NOMINATIM_AMENITIES = ['hospital', 'police', 'clinic', 'fire_station'];
+
+interface NominatimPlace {
+  osm_type: 'node' | 'way' | 'relation';
+  osm_id: number;
+  lat: string;
+  lon: string;
+  name?: string;
+  type?: string;
+  address?: Record<string, string>;
+  extratags?: Record<string, string> | null;
+}
+
+/**
+ * Searches OSM amenities via Nominatim within a bounding box and converts
+ * results to Overpass-style nodes so parseElements() can handle them.
+ * Requests are staggered to respect Nominatim's usage policy.
+ */
+async function queryNominatim(
+  lat: number,
+  lng: number,
+  radiusMeters: number,
+  signal: AbortSignal,
+): Promise<OsmElement[]> {
+  const dLat = radiusMeters / 111_000;
+  const dLng = dLat / Math.max(Math.cos((lat * Math.PI) / 180), 0.1);
+  const viewbox = [lng - dLng, lat + dLat, lng + dLng, lat - dLat].map(n => n.toFixed(5)).join(',');
+
+  const fetchAmenity = async (amenity: string, index: number): Promise<OsmElement[]> => {
+    await new Promise(r => setTimeout(r, index * 400));
+    const url =
+      `https://nominatim.openstreetmap.org/search?format=jsonv2&amenity=${amenity}` +
+      `&viewbox=${viewbox}&bounded=1&limit=40&addressdetails=1&extratags=1`;
+    const res = await fetch(url, { signal });
+    if (!res.ok) throw new Error(`Nominatim returned ${res.status}`);
+    const places: NominatimPlace[] = await res.json();
+    return places.map(p => {
+      const a = p.address ?? {};
+      const tags: OsmTags = {
+        ...(p.extratags ?? {}),
+        name: p.name || undefined,
+        amenity: p.type ?? amenity,
+        'addr:housenumber': a.house_number,
+        'addr:street': a.road,
+        'addr:suburb': a.suburb ?? a.neighbourhood,
+        'addr:city': a.city ?? a.town ?? a.village,
+      };
+      return { type: 'node', id: p.osm_id, lat: Number(p.lat), lon: Number(p.lon), tags } as OsmNode;
+    });
+  };
+
+  const results = await Promise.allSettled(NOMINATIM_AMENITIES.map(fetchAmenity));
+  const elements = results.flatMap(r => (r.status === 'fulfilled' ? r.value : []));
+  if (results.every(r => r.status === 'rejected')) throw new Error('Nominatim failed');
+  if (elements.length === 0) throw new Error('Nominatim returned no results');
+  return elements;
 }
 
 // ─── Public API ────────────────────────────────────────────────────────────────
