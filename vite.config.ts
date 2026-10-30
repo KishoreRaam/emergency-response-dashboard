@@ -24,7 +24,18 @@ export default defineConfig({
             handler: 'CacheFirst',
             options: {
               cacheName: 'map-tiles',
-              expiration: { maxEntries: 200, maxAgeSeconds: 86400 },
+              expiration: { maxEntries: 500, maxAgeSeconds: 7 * 86400 },
+              // Leaflet tiles are cross-origin (opaque, status 0) — must opt in
+              cacheableResponse: { statuses: [0, 200] },
+            },
+          },
+          {
+            urlPattern: /fonts\.(googleapis|gstatic)\.com/,
+            handler: 'CacheFirst',
+            options: {
+              cacheName: 'google-fonts',
+              expiration: { maxEntries: 30, maxAgeSeconds: 365 * 86400 },
+              cacheableResponse: { statuses: [0, 200] },
             },
           },
         ],

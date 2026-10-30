@@ -77,7 +77,7 @@ interface CacheEntry {
 
 // One-time purge of stale cache from broken GPS build.
 // Bump this version string if you ever need to force-clear again.
-const CACHE_VERSION = 'v3';
+const CACHE_VERSION = 'v4';
 const CACHE_VERSION_KEY = 'roadsos_cache_version';
 (function purgeStaleCacheOnce() {
   try {
@@ -123,6 +123,12 @@ export function getCachedServices(
   const dist = haversineDistance(userLat, userLng, cache.lat, cache.lng);
   if (age < CACHE_MAX_AGE_MS && dist <= CACHE_VALID_RADIUS_KM) return cache.services;
   return null;
+}
+
+/** Location of the last successful fetch — used when GPS is unavailable offline. */
+export function getLastCachedLocation(): { lat: number; lng: number } | null {
+  const cache = loadCache();
+  return cache ? { lat: cache.lat, lng: cache.lng } : null;
 }
 
 /**
@@ -281,7 +287,18 @@ async function queryOverpass(
 
 // ─── Nominatim fetch ───────────────────────────────────────────────────────────
 
-const NOMINATIM_AMENITIES = ['hospital', 'police', 'clinic', 'fire_station'];
+// Nominatim ranks by importance (not distance) and caps at 40 results, so
+// small nearby hospitals get cut from wide searches — add a close-range pass.
+const NEAR_RADIUS_M = 3_000;
+const NOMINATIM_QUERIES: { amenity: string; near: boolean }[] = [
+  { amenity: 'hospital', near: true },
+  { amenity: 'clinic', near: true },
+  { amenity: 'doctors', near: true },
+  { amenity: 'hospital', near: false },
+  { amenity: 'police', near: false },
+  { amenity: 'clinic', near: false },
+  { amenity: 'fire_station', near: false },
+];
 
 interface NominatimPlace {
   osm_type: 'node' | 'way' | 'relation';
@@ -305,12 +322,18 @@ async function queryNominatim(
   radiusMeters: number,
   signal: AbortSignal,
 ): Promise<OsmElement[]> {
-  const dLat = radiusMeters / 111_000;
-  const dLng = dLat / Math.max(Math.cos((lat * Math.PI) / 180), 0.1);
-  const viewbox = [lng - dLng, lat + dLat, lng + dLng, lat - dLat].map(n => n.toFixed(5)).join(',');
+  const viewboxFor = (radius: number) => {
+    const dLat = radius / 111_000;
+    const dLng = dLat / Math.max(Math.cos((lat * Math.PI) / 180), 0.1);
+    return [lng - dLng, lat + dLat, lng + dLng, lat - dLat].map(n => n.toFixed(5)).join(',');
+  };
 
-  const fetchAmenity = async (amenity: string, index: number): Promise<OsmElement[]> => {
+  const fetchAmenity = async (
+    { amenity, near }: { amenity: string; near: boolean },
+    index: number,
+  ): Promise<OsmElement[]> => {
     await new Promise(r => setTimeout(r, index * 400));
+    const viewbox = viewboxFor(near ? Math.min(NEAR_RADIUS_M, radiusMeters) : radiusMeters);
     const url =
       `https://nominatim.openstreetmap.org/search?format=jsonv2&amenity=${amenity}` +
       `&viewbox=${viewbox}&bounded=1&limit=40&addressdetails=1&extratags=1`;
@@ -332,7 +355,7 @@ async function queryNominatim(
     });
   };
 
-  const results = await Promise.allSettled(NOMINATIM_AMENITIES.map(fetchAmenity));
+  const results = await Promise.allSettled(NOMINATIM_QUERIES.map(fetchAmenity));
   const elements = results.flatMap(r => (r.status === 'fulfilled' ? r.value : []));
   if (results.every(r => r.status === 'rejected')) throw new Error('Nominatim failed');
   if (elements.length === 0) throw new Error('Nominatim returned no results');

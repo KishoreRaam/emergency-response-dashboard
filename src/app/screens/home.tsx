@@ -12,7 +12,7 @@ import { BottomNav } from '../components/bottom-nav';
 import { haversineDistance, etaMinutes } from '../utils/distance';
 import { useNavigate, useSearchParams } from 'react-router';
 import { SosButton } from '../components/sos-button';
-import { fetchNearbyServices, getCachedServices, getStaleCachedServices } from '../services/overpass';
+import { fetchNearbyServices, getCachedServices, getLastCachedLocation, getStaleCachedServices } from '../services/overpass';
 
 // ─── Constants ────────────────────────────────────────────────────────────────
 
@@ -220,6 +220,9 @@ export function HomeScreen() {
       () => {
         setGpsLoading(false);
         setGpsFailed(true);
+        // No GPS (e.g. laptop offline) — fall back to where data was last cached
+        const last = getLastCachedLocation();
+        if (last) setUserLocation(prev => prev ?? last);
       },
       { enableHighAccuracy: true },
     );
